@@ -43,7 +43,8 @@ Aşağıdaki tablolar **mantıksal sözleşmedir**; henüz çalışan kod ya da 
 | `camera_position`, `camera_angle_note` | str veya null | Konum/açı açıklaması; ölçülmediyse `null` |
 | `width_px`, `height_px` | int veya null | Çözünürlük |
 | `nominal_fps`, `measured_fps` | float veya null | Kaynak/gerçekte işlenen kare hızı, ayrı ayrı |
-| `dropped_frame_count` | int ≥ 0 veya null | Ölçülebiliyorsa kayıp/atlanan kare sayısı |
+| `dropped_by_source` | int ≥ 0 veya null | Kamera/sürücünün düşürdüğü kareler; zaman damgası aralıklarındaki boşluklardan kestirilir |
+| `skipped_by_pipeline` | int ≥ 0 | İşleme yetişilemediği için bilerek atlanan kareler (`LIVE`); `FILE` modunda 0 |
 | `schema_version` | str | Şema sürümü |
 
 Gerçek kişiye ait isim, iletişim ve kimlik eşlemesi bu şemada **bulunmaz**. Kamera kurulumu mümkün olduğunca oturumlar arasında sabit tutulur; değişirse ayrıca kaydedilir.
@@ -53,12 +54,14 @@ Gerçek kişiye ait isim, iletişim ve kimlik eşlemesi bu şemada **bulunmaz**.
 | Alan | Tip | Açıklama |
 |---|---|---|
 | `session_id` | str | Oturum referansı |
-| `frame_index` | int ≥ 0 | Kaynak kare sırası |
+| `frame_index` | int ≥ 0 | Kaynak kare sırası; atlanan kareler sırada boşluk olarak görünür |
 | `timestamp_ms` | int ≥ 0 | Oturum-başlangıçlı **video zaman damgası** |
 | `frame` | bellekte görüntü nesnesi | **GitHub'a ve FeatureStore'a ham kare yazılmaz** |
 | `source_status` | enum / hata kodu | OK, READ_ERROR, SKIPPED vb. |
 
-**Zaman kaynağı:** `FILE` modunda konteynerin/video akışının kare sunum zamanı (presentation timestamp) kullanılır; dosyanın işlendiği duvar/CPU zamanı kullanılmaz. `LIVE` modunda oturum başlangıcına göre monotonik saat ile kare yakalama zamanı ölçülür (işleme bitiş zamanı değil). Her iki modun sunduğu `timestamp_ms` aynı video-zamanı sözleşmesine uyar. Kamera/drayver zaman damgası yoksa kaynak yakalama anındaki monotonik saat kullanılır ve sınırlılık not edilir.
+**Zaman kaynağı:** `FILE` modunda konteynerin/video akışının kare sunum zamanı (presentation timestamp) kullanılır; dosyanın işlendiği duvar/CPU zamanı kullanılmaz. `LIVE` modunda kamera/sürücü gerçek yakalama zaman damgası sağlamıyorsa oturum başlangıcına göre monotonik saatle kare **okuma zamanı** ölçülür (işleme bitiş zamanı değil). Bu değer OpenCV tamponu nedeniyle gerçek yakalama zamanı olmayabilir. Her iki modun `timestamp_ms` alanı oturum başlangıcına göre tanımlanır; ölçüm kaynağı ve olası gecikme kaydedilir.
+
+**Araştırma kaydı ilkesi:** Araştırma oturumları önce video dosyasına kaydedilir ve öznitelikler bu dosyadan `FILE` modunda çıkarılır. İnsan etiketleri de aynı dosya üzerinde yapıldığından öznitelikler ve etiketler tek bir video zaman çizelgesini paylaşır. `LIVE` modu yalnız demo/yerel arayüz içindir; `LIVE` modunda ölçülen zaman, OpenCV tamponu nedeniyle kare yakalama değil **okuma** zamanı olabilir ve bu sınırlılık raporda belirtilir. Kayıt mümkünse sabit kare hızıyla yapılır; değilse kare zaman damgaları ayrıca saklanır.
 
 **Kare politikası:** `LIVE` için işleme yetişilemiyorsa en son kareyi tercih eden sınırlı kuyruk ve atlanan kare sayacı; `FILE` için varsayılan tüm kareleri işleme. Bunlar Faz 3'te ölçülecek uygulama kararlarıdır. Video zamanı sabit ardışık FPS varsayımıyla türetilmez; değişken kare aralıkları korunur.
 
@@ -74,7 +77,7 @@ Gerçek kişiye ait isim, iletişim ve kimlik eşlemesi bu şemada **bulunmaz**.
 | `face_status` | `VALID`, `NOT_DETECTED`, `LOW_CONFIDENCE`, `OCCLUDED` | “Yüz yok” ve “düşük güven” ayrılır |
 | `phone_status` | `VISIBLE`, `NOT_VISIBLE`, `OCCLUDED`, `NOT_EVALUATED` | “Görünmüyor” doğrudan “ortamda yok” değildir |
 | `hand_status` | `VALID`, `NOT_DETECTED`, `OCCLUDED`, `NOT_EVALUATED` | Bağımsız el bileşeni için |
-| `validity_flags` | nesne/booleans | Her bileşenin kanıt geçerliliği |
+| `validity_flags` | adlandırılmış booleans (`head_pose_valid`, `eye_features_valid`) | Yalnız alan bazlı geçerlilik; bileşen durumu için **esas kaynak** `face_status` / `phone_status` / `hand_status` alanlarıdır |
 
 **Sınır:** Telefonun yalnız görünmesi `TELEFON` sınıfını kanıtlamaz. Tam yüz landmark koordinatları varsayılan depolama şemasına **alınmamıştır**. Bu alanların saklanabilirliği, veri minimizasyonu ve etik/kurumsal izin henüz netleşmemiştir. `FeatureRecord` şimdilik bellekte/sentetik testlerde kullanılabilir.
 
