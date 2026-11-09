@@ -1,6 +1,9 @@
 ## İlgili Issue
-Closes #
+<!-- PR, Issue'yu tamamen tamamlıyorsa Closes #ISSUE_NO kullan. -->
+<!-- PR, Issue'nun yalnızca bir kısmını tamamlıyorsa Refs #ISSUE_NO kullan. -->
+<!-- İlgili Issue yoksa aşağıdaki satırı sil. -->
 
+Refs #
 ## Yapılan Değişiklikler
 -
 
