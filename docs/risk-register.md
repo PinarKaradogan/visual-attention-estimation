@@ -52,14 +52,14 @@ Kabul kanıtı: Kamera konumu ve koşul matrisi + görsel işaret kaybı/kalite 
 F2 — Bilgisayar ve yerel performans (Bahar + Pınar)
 Her bilgisayar için doldur:
 Alan	Bahar bilgisayarı	Pınar bilgisayarı
-İşletim sistemi	Ölçülecek	Ölçülecek
-Python sürümü	Ölçülecek	Ölçülecek
-CPU / RAM	Ölçülecek	Ölçülecek
-GPU (varsa)	Ölçülecek	Ölçülecek
-Kamera aygıtı / çözünürlük	Ölçülecek	Ölçülecek
-Ortalama FPS	Ölçülecek	Ölçülecek
-Gecikme (ms)	Ölçülecek	Ölçülecek
-Kamera açma/smoke test	Beklemede	Beklemede
+İşletim sistemi	Windows 11 Pro for Workstations (build 26200)	Ölçülecek
+Python sürümü	3.13.16 (conda; proje ortamı henüz kurulmadı)	Ölçülecek
+CPU / RAM	AMD Ryzen 7 7840HS (8 çekirdek / 16 izlek) / 16 GB	Ölçülecek
+GPU (varsa)	NVIDIA RTX 4050 Laptop 6 GB + AMD Radeon 780M (dahili)	Ölçülecek
+Kamera aygıtı / çözünürlük	HP True Vision FHD (dahili, ekran üstü); 640×480, 1280×720, 1920×1080; ham yakalama ~30 FPS (720p/1080p), 13,3 FPS (640×480)	Ölçülecek
+Ortalama FPS	Ölçülecek (işlem hattı henüz yok)	Ölçülecek
+Gecikme (ms)	Ölçülecek (işlem hattı henüz yok)	Ölçülecek
+Kamera açma/smoke test	Geçti (OpenCV ile açıldı, kare okundu)	Beklemede
 
 
 Ölçüm standardı: Aynı test videosu veya kişisel veri içermeyen sentetik giriş ve aynı işlem hattıyla karşılaştırma. FPS = işlenen kare / geçen süre; gecikme, girişten çıktı üretimine kadar ölçülür. Isınma dönemi ve test süresi raporda belirtilir. 10 FPS bir hedeftir, mevcut başarı değildir.
@@ -107,7 +107,7 @@ Etiket güvenilirliği / LOSO / M0–M1	Ortak	Faz 3	Gerekli izin, izinli veri	Ki
 7. Açık karar ve test günlüğü
 Tarih	Karar / gözlem	Kaynak / kanıt	Sorumlu	Sonraki işlem
 2026-11-09	Risk envanteri ilk sürümü oluşturuldu; teknik ölçüm yapılmadı	Bu belge	Pınar + Bahar inceleyecek	Donanım envanterini ve kamera koşullarını doldur
-—	—	—	—	—
+2026-11-09	Bahar bilgisayarı: dahili kamerayla ham yakalama ölçüldü; 720p/1080p ~30 FPS, 640×480 yalnız 13,3 FPS (3 sn ölçüm, görüntü kaydedilmedi). Düşük çözünürlükteki yavaşlamanın otomatik pozlama/ışıktan kaynaklandığı tahmin ediliyor, doğrulanmadı.	OpenCV 4 + DirectShow, kişisel veri saklanmadı	Bahar	R02/R07 için ışık koşullu tekrar ölçümü; dahili kameranın kâğıt ve elleri görüp görmediği R01 kadraj testinde incelenecek (gerekirse harici USB kamera)
 
 
 Test kayıt şablonu (her test için kopyala)
