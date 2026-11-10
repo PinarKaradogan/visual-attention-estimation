@@ -1,8 +1,11 @@
 # Faz 2.3 — Veri Şeması ve Zaman Sözleşmesi (v0.1)
 
-**Proje:** Masa Başında Kâğıt Tabanlı Çalışmada Görsel Dikkat Durumunun ve Odak Süresinin Bilgisayarlı Görü ile Kestirimi  
-**Tarih:** 9 Kasım 2026  
-**Sorumlular:** Pınar (ana), Bahar (kamera/öznitelik doğrulaması)  
+**Proje:** Masa Başında Kâğıt Tabanlı Çalışmada Görsel Dikkat Durumunun ve Odak Süresinin Bilgisayarlı Görü ile Kestirimi
+
+**Tarih:** 9 Kasım 2026
+
+**Sorumlular:** Pınar (ana), Bahar (kamera/öznitelik doğrulaması)
+
 **Durum:** İnceleme taslağı — gerçek veri toplama ve saklama için izin verilmiş değildir.
 
 ## 1. Amaç ve kapsam
@@ -11,7 +14,7 @@ Bu belge `architecture.md` v0.2 ve 8 haftalık iç yol haritasına dayanarak mod
 
 - Ana sınıflar: `MATERYAL`, `TELEFON`, `DIS_YON` (raporda `DIŞ_YÖN`).
 - `BELIRSIZ` tahmin/karar özel çıktısıdır; dördüncü ana eğitim sınıfı değildir.
-- 2.000 ms pencere / 1.000 ms kaydırma; tekil saniye kararları [başlangıç, bitiş) aralıklarıyla tanımlanır.
+- 2.000 ms pencere / 1.000 ms kaydırma; tekil saniye kararları `[başlangıç, bitiş)` aralıklarıyla tanımlanır.
 - Katılımcı bazlı LOSO: aynı `participant_id`'ye ait **tüm** oturumlar bir dış katlamada birlikte testte kalır.
 - Ham video, kimlik eşleme bilgisi ve kişisel veriler GitHub'a gönderilmez. Özniteliklerin kalıcı saklanması etik/kurumsal karar sonrasına bağlıdır. Şimdilik yalnız sentetik örnek üretilir.
 
@@ -32,7 +35,7 @@ Aşağıdaki tablolar **mantıksal sözleşmedir**; henüz çalışan kod ya da 
 ### 3.1 `SessionRecord` — oturum üst verisi
 
 | Alan | Tip / değer | Amaç |
-|---|---|---|
+| --- | --- | --- |
 | `session_id` | str, zorunlu, benzersiz | Oturum anahtarı |
 | `participant_id` | str, zorunlu | LOSO gruplama anahtarı |
 | `session_type` | `SCENARIO` / `FREE` | Oturum türü |
@@ -52,7 +55,7 @@ Gerçek kişiye ait isim, iletişim ve kimlik eşlemesi bu şemada **bulunmaz**.
 ### 3.2 `FrameRecord` — kare akışı (kalıcı saklama zorunlu değil)
 
 | Alan | Tip | Açıklama |
-|---|---|---|
+| --- | --- | --- |
 | `session_id` | str | Oturum referansı |
 | `frame_index` | int ≥ 0 | Kaynak kare sırası; atlanan kareler sırada boşluk olarak görünür |
 | `timestamp_ms` | int ≥ 0 | Oturum-başlangıçlı **video zaman damgası** |
@@ -68,7 +71,7 @@ Gerçek kişiye ait isim, iletişim ve kimlik eşlemesi bu şemada **bulunmaz**.
 ### 3.3 `FeatureRecord` — türetilmiş ölçüm
 
 | Alan | Tip | Açıklama |
-|---|---|---|
+| --- | --- | --- |
 | `session_id`, `frame_index`, `timestamp_ms` | str, int, int | Kaynak izlenebilirliği |
 | `feature_version` | str | Çıkarıcı/öznitelik kümesi sürümü |
 | `head_yaw_deg`, `head_pitch_deg`, `head_roll_deg` | float veya null | Baş yönelimi, **derece**; pozitif yön tanımı açık karar |
@@ -84,7 +87,7 @@ Gerçek kişiye ait isim, iletişim ve kimlik eşlemesi bu şemada **bulunmaz**.
 ### 3.4 `WindowRecord` — 2 saniyelik özet
 
 | Alan | Tip | Açıklama |
-|---|---|---|
+| --- | --- | --- |
 | `session_id`, `window_index` | str, int | Oturum ve pencere |
 | `start_ms`, `end_ms` | int, int | `[start,end)`; varsayılan pencere uzunluğu 2.000 ms |
 | `aggregates` | sürümlü sayısal alanlar | `FeatureRecord` özetlerinden hesaplanır |
@@ -98,7 +101,7 @@ Pencereler `[0,2000)`, `[1000,3000)`, `[2000,4000)` ... şeklindedir. **Asgari k
 ### 3.5 `HumanLabelInterval` ve `SecondReference`
 
 | Kayıt | Temel alanlar | Açıklama |
-|---|---|---|
+| --- | --- | --- |
 | `HumanLabelInterval` | `session_id`, `annotator_id` (kod), `start_ms`, `end_ms`, `label`, `label_version` | İnsan gözlemcinin zaman aralığı etiketi |
 | `SecondReference` | `session_id`, `second_start_ms`, `label`, `validity`, `label_version`, `agreement_status` | `LabelAligner`'ın ürettiği tekil 1 saniye referansı |
 
@@ -107,7 +110,7 @@ Pencereler `[0,2000)`, `[1000,3000)`, `[2000,4000)` ... şeklindedir. **Asgari k
 ### 3.6 `Prediction` ve `SecondDecision`
 
 | Kayıt | Temel alanlar | Açıklama |
-|---|---|---|
+| --- | --- | --- |
 | `Prediction` | `session_id`, `window_index`, `start_ms`, `end_ms`, `model_id` (`M0`/`M1`), `label`, `score_or_null`, `reason` | Pencere tahmini |
 | `SecondDecision` | `session_id`, `second_start_ms`, `label`, `source_window_start_ms`, `source_window_end_ms`, `resolution_policy_version`, `coverage_ratio`, `reason` | Tekil saniye kararı |
 
@@ -154,7 +157,7 @@ Faz 2'de en az bir küçük sentetik fixture ve test eklenmesi planlanır; **bu 
 ## 6. Açık kararlar ve sorumluları
 
 | Karar | Önerilen sahip | Tamamlanma zamanı |
-|---|---|---|
+| --- | --- | --- |
 | `head_pitch_deg` ve diğer açıların işaret yönü | Bahar | Faz 2.3–2.4 |
 | Sabit `eye_features` alan listesi | Bahar | Faz 2.3–2.4 |
 | Pencere asgari kare/kapsama eşiği | Bahar + Pınar | Kamera ölçümü / Faz 2.4 |
