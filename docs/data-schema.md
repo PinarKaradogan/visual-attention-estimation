@@ -1,4 +1,4 @@
-# Faz 2.3 — Veri Şeması ve Zaman Sözleşmesi (v0.1)
+# Faz 2.3 — Veri Şeması ve Zaman Sözleşmesi (v0.2)
 
 **Proje:** Masa Başında Kâğıt Tabanlı Çalışmada Görsel Dikkat Durumunun ve Odak Süresinin Bilgisayarlı Görü ile Kestirimi
 
@@ -6,11 +6,11 @@
 
 **Sorumlular:** Pınar (ana), Bahar (kamera/öznitelik doğrulaması)
 
-**Durum:** İnceleme taslağı — gerçek veri toplama ve saklama için izin verilmiş değildir.
+**Durum:** v0.2 — TÜBİTAK 2209-A önerisi v5 ve `docs/labeling-protocol.md` ile uyumlu hale getirildi (#23). Gerçek veri toplama ve saklama için izin verilmiş değildir.
 
 ## 1. Amaç ve kapsam
 
-Bu belge `architecture.md` v0.2 ve 8 haftalık iç yol haritasına dayanarak modüller arasında taşınacak verinin **alan adlarını, türlerini, birimlerini, anahtarlarını, geçerlilik durumlarını ve zaman çizelgesini** tanımlar. İlgili modüller: `VideoSource`, `FeatureExtractor`, `WindowBuilder`, `Classifier`, `TimelineResolver`, `LabelAligner`, `FeatureStore`, `ExperimentRunner` ve `SessionMetrics`.
+Bu belge `architecture.md` v0.3, `labeling-protocol.md` ve TÜBİTAK 2209-A önerisi v5'e dayanarak modüller arasında taşınacak verinin **alan adlarını, türlerini, birimlerini, anahtarlarını, geçerlilik durumlarını ve zaman çizelgesini** tanımlar. İlgili modüller: `VideoSource`, `FeatureExtractor`, `WindowBuilder`, `Classifier`, `TimelineResolver`, `LabelAligner`, `FeatureStore`, `ExperimentRunner` ve `SessionMetrics`.
 
 - Ana sınıflar: `MATERYAL`, `TELEFON`, `DIS_YON` (raporda `DIŞ_YÖN`).
 - `BELIRSIZ` tahmin/karar özel çıktısıdır; dördüncü ana eğitim sınıfı değildir.
@@ -24,7 +24,7 @@ Bu belge `architecture.md` v0.2 ve 8 haftalık iç yol haritasına dayanarak mod
 - `session_id`: `str`; oturumun benzersiz kodu; `participant_id` ile ilişkilidir.
 - `session_type`: enum `SCENARIO` / `FREE` (20 dakika senaryolu, 10 dakika serbest).
 - `timestamp_ms`, `start_ms`, `end_ms`: `int` ≥ 0; **oturumun video zaman çizelgesinde** milisaniye. Bütün zaman aralıkları **yarı açık** `[start_ms, end_ms)` ve `end_ms > start_ms`.
-- `schema_version`: `str` (başlangıç `0.1.0`); veri dosyası yapısını izler. `feature_version`, `label_version`, `resolution_policy_version` ayrıdır.
+- `schema_version`: `str` (bu sürüm `0.2.0`); veri dosyası yapısını izler. `feature_version`, `label_version`, `resolution_policy_version` ayrıdır.
 - Kayıp sayı için `null` kullanılır; `0` gerçek sayısal ölçüm anlamına gelir. İlgili durum bayrağı ayrıca tutulur.
 - Tarih/saat gerekirse yalnız oturum üst verisinde ISO 8601 olarak tutulur; **ölçüm süreleri duvar saati farkından hesaplanmaz**.
 
@@ -75,14 +75,19 @@ Gerçek kişiye ait isim, iletişim ve kimlik eşlemesi bu şemada **bulunmaz**.
 | `session_id`, `frame_index`, `timestamp_ms` | str, int, int | Kaynak izlenebilirliği |
 | `feature_version` | str | Çıkarıcı/öznitelik kümesi sürümü |
 | `head_yaw_deg`, `head_pitch_deg`, `head_roll_deg` | float veya null | Baş yönelimi, **derece**; pozitif yön tanımı açık karar |
-| `eye_features` | adlandırılmış sınırlı sayısal alanlar veya null | Tam alan listesi Faz 2.3/2.4 ekip kararıyla kilitlenecek |
-| `phone_cues` | yapılandırılmış işaretler | Telefon görünürlük/etkileşim ipuçları; tespit aracı henüz seçilmedi |
+| `eye_aspect_ratio_left`, `eye_aspect_ratio_right` | float veya null | Göz açıklık oranı (EAR); yardımcı göstergedir, bakış noktası ölçülmez (v5 2.4) |
+| `hand_count` | int 0–2 veya null | Algılanan el sayısı; el bileşeni çalışmadıysa `null` |
+| `left_wrist_x`, `left_wrist_y`, `right_wrist_x`, `right_wrist_y` | float [0,1] veya null | Bilek konumu, görüntü genişliği/yüksekliğine göre normalize; el yoksa `null`. Yazma hareketi pencere düzeyinde bu alanların değişkenliğinden hesaplanır |
+| `hand_phone_distance_norm` | float ≥ 0 veya null | Ele ait en yakın işaret noktası ile telefon kutusu merkezi arasındaki uzaklık / görüntü köşegeni; telefona uzanma göstergesi. El veya telefon yoksa `null` |
+| `hand_phone_overlap` | bool veya null | En az bir el işaret noktası telefon kutusunun içinde mi; telefonu tutma göstergesi. El veya telefon yoksa `null` |
+| `phone_score` | float [0,1] veya null | "cell phone" sınıfı için en yüksek tespit güveni (MediaPipe Object Detector, EfficientDet-Lite0) |
+| `phone_box_x`, `phone_box_y`, `phone_box_w`, `phone_box_h` | float [0,1] veya null | En güvenli telefon kutusu, normalize; telefon yoksa `null` |
 | `face_status` | `VALID`, `NOT_DETECTED`, `LOW_CONFIDENCE`, `OCCLUDED` | “Yüz yok” ve “düşük güven” ayrılır |
 | `phone_status` | `VISIBLE`, `NOT_VISIBLE`, `OCCLUDED`, `NOT_EVALUATED` | “Görünmüyor” doğrudan “ortamda yok” değildir |
 | `hand_status` | `VALID`, `NOT_DETECTED`, `OCCLUDED`, `NOT_EVALUATED` | Bağımsız el bileşeni için |
-| `validity_flags` | adlandırılmış booleans (`head_pose_valid`, `eye_features_valid`) | Yalnız alan bazlı geçerlilik; bileşen durumu için **esas kaynak** `face_status` / `phone_status` / `hand_status` alanlarıdır |
+| `validity_flags` | adlandırılmış booleans (`head_pose_valid`, `eye_features_valid`, `hand_features_valid`, `phone_features_valid`) | Yalnız alan bazlı geçerlilik; bileşen durumu için **esas kaynak** `face_status` / `phone_status` / `hand_status` alanlarıdır |
 
-**Sınır:** Telefonun yalnız görünmesi `TELEFON` sınıfını kanıtlamaz. Tam yüz landmark koordinatları varsayılan depolama şemasına **alınmamıştır**. Bu alanların saklanabilirliği, veri minimizasyonu ve etik/kurumsal izin henüz netleşmemiştir. `FeatureRecord` şimdilik bellekte/sentetik testlerde kullanılabilir.
+**Sınır:** Telefonun yalnız görünmesi `TELEFON` sınıfını kanıtlamaz; el göstergeleriyle birlikte yorumlanır. Tam yüz ve el landmark koordinatları varsayılan depolama şemasına **alınmamıştır**; yalnız yukarıdaki türetilmiş alanlar tutulur. El alan adları P4-03 (el/bilek öznitelikleri) uygulamasında ekipçe gözden geçirilir; değişiklik önce bu belgede yapılır. Bu alanların saklanabilirliği, veri minimizasyonu ve etik/kurumsal izin henüz netleşmemiştir. `FeatureRecord` şimdilik bellekte/sentetik testlerde kullanılabilir.
 
 ### 3.4 `WindowRecord` — 2 saniyelik özet
 
@@ -90,31 +95,45 @@ Gerçek kişiye ait isim, iletişim ve kimlik eşlemesi bu şemada **bulunmaz**.
 | --- | --- | --- |
 | `session_id`, `window_index` | str, int | Oturum ve pencere |
 | `start_ms`, `end_ms` | int, int | `[start,end)`; varsayılan pencere uzunluğu 2.000 ms |
-| `aggregates` | sürümlü sayısal alanlar | `FeatureRecord` özetlerinden hesaplanır |
+| `aggregates` | sürümlü sayısal alanlar | Her sayısal `FeatureRecord` alanı için `<alan>_mean`, `<alan>_std` (değişkenlik) ve `<alan>_delta` (son geçerli değer − ilk geçerli değer); boolean alanlar için oran (`<alan>_ratio`). Geçerli değer yoksa `null` |
+| `face_detected_ratio` | float [0,1] veya null | Penceredeki karelerden `face_status = VALID` olanların oranı; M0'ın %50 `BELIRSIZ` kuralı bunu kullanır |
 | `available_frame_count` | int ≥ 0 | Penceredeki işlenen geçerli kare sayısı |
 | `coverage_ratio` | float [0,1] veya null | Kanıt kapsaması, hesaplama tanımı belgelenmeli |
-| `is_valid`, `invalid_reason` | bool, str veya null | Geçerlilik kararı |
+| `is_valid`, `invalid_reason` | bool, str veya null | Geçerlilik kararı; boş pencere geçersizdir |
+| `train_label` | `MATERYAL` / `TELEFON` / `DIS_YON` / `GECIS` / `UNUSED` veya null | İnsan etiketinden hesaplanan M1 eğitim hedefi (`labeling-protocol.md` 5.3); `GECIS` ve `UNUSED` eğitime girmez; etiket yoksa (canlı mod) `null` |
 | `feature_version` | str | Girdi uyumu |
 
-Pencereler `[0,2000)`, `[1000,3000)`, `[2000,4000)` ... şeklindedir. **Asgari kare sayısı ve kapsama eşiği henüz belirlenmedi**; Faz 2.4 öncesi test ve kamera verilerine göre ekipçe sabitlenecek. Bir pencereyi salt kare sayısı ile geçerli varsaymayız.
+Pencereler `[0,2000)`, `[1000,3000)`, `[2000,4000)` ... şeklindedir. Eksik değerler `null` kalır; eksik kanıt hiçbir zaman `MATERYAL` sayılmaz. **Asgari kare sayısı ve kapsama eşiği henüz belirlenmedi**; kamera ölçümüne göre ekipçe sabitlenecek. Bir pencereyi salt kare sayısı ile geçerli varsaymayız.
 
 ### 3.5 `HumanLabelInterval` ve `SecondReference`
 
 | Kayıt | Temel alanlar | Açıklama |
 | --- | --- | --- |
-| `HumanLabelInterval` | `session_id`, `annotator_id` (kod), `start_ms`, `end_ms`, `label`, `label_version` | İnsan gözlemcinin zaman aralığı etiketi |
-| `SecondReference` | `session_id`, `second_start_ms`, `label`, `validity`, `label_version`, `agreement_status` | `LabelAligner`'ın ürettiği tekil 1 saniye referansı |
+| `HumanLabelInterval` | `session_id`, `annotator_id` (etiketleyici kodu, ör. `A1`), `label_round` (`r1` / `r2` / `final`), `start_ms`, `end_ms`, `label`, `label_version` | İnsan gözlemcinin ELAN'daki zaman aralığı etiketi; `label` ∈ `MATERYAL` / `TELEFON` / `DIS_YON` / `BELIRSIZ` |
+| `SecondReference` | `session_id`, `second_start_ms`, `label`, `validity`, `annotator_id`, `label_round`, `label_version`, `agreement_status` | `LabelAligner`'ın ürettiği tekil 1 saniye referansı; `label` ∈ `MATERYAL` / `TELEFON` / `DIS_YON` / `BELIRSIZ` / `GECIS` (kodda `core.labels.Label`); `validity` belirsizliğin kaynağını ayırır: `LABELED` / `UNCERTAIN` / `UNLABELED` |
 
-İnsan referans sınıfları `MATERYAL`, `TELEFON`, `DIS_YON`; karar verilemeyen zaman aralıkları **ayrı `UNCERTAIN`/`UNLABELED` durumuyla** yönetilir (ana sınıf değildir). Bir saniyede birden fazla insan etiketi, çatışma, kısmi kapsama veya belirsizlik varsa ilgili bayraklar tutulur. **Etiket çakışmalarının çözüm ve uzlaşı kuralı Faz 2.4'te sabitlenecek.** En az %25 bağımsız çift etiketleme ve Cohen's Kappa yol haritası gereğidir.
+İnsan referans sınıfları `MATERYAL`, `TELEFON`, `DIS_YON`; ELAN'daki `BELIRSIZ` etiketi (`validity` = `UNCERTAIN`) ve hiçbir aralığa düşmeyen süre (`validity` = `UNLABELED`) 1 sn referansta `Label.BELIRSIZ` olur; model tarafıyla aynı değer kullanıldığı için metrikler iki tarafa aynı kuralla uygulanır (ana sınıf değildir). Bir saniyede bir ana sınıf 500 ms'den fazlasını kaplıyorsa saniye o sınıfı alır; belirsiz + etiketsiz süre 500 ms veya fazlaysa `BELIRSIZ`; aksi halde (ör. 500/500) `GECIS` (`labeling-protocol.md` 5.2). `agreement_status`, tekrar setindeki saniyelerde `r1` ile `r2` karşılaştırmasını gösterir: `AGREE` / `DISAGREE` / `NOT_IN_RETEST`. Etiket güvenirliği, videonun en az %25'inin aynı etiketleyici tarafından en az 4 hafta sonra kör olarak yeniden etiketlenmesiyle (test–tekrar test) Cohen's Kappa ile ölçülür.
 
 ### 3.6 `Prediction` ve `SecondDecision`
 
 | Kayıt | Temel alanlar | Açıklama |
 | --- | --- | --- |
-| `Prediction` | `session_id`, `window_index`, `start_ms`, `end_ms`, `model_id` (`M0`/`M1`), `label`, `score_or_null`, `reason` | Pencere tahmini |
+| `Prediction` | `session_id`, `window_index`, `start_ms`, `end_ms`, `model_id` (`M0` / `M1` / `MAJORITY`), `label`, `score_or_null`, `reason` | Pencere tahmini; `BELIRSIZ` gerekçeleri: `LOW_FACE_RATIO`, `RULE_CONFLICT` (M0), `LOW_CONFIDENCE` (M1) |
 | `SecondDecision` | `session_id`, `second_start_ms`, `label`, `source_window_start_ms`, `source_window_end_ms`, `resolution_policy_version`, `coverage_ratio`, `reason` | Tekil saniye kararı |
 
-`TimelineResolver` için mimari v0.2'deki **taslak** politika: tamamlanmış 2 sn pencerenin tahmini son 1 sn'ye atanır; ilk saniye yalnızca ilk geçerli pencereyle bootstrap edilir. Her `session_id + second_start_ms` için tek karar vardır; saniyeler çifte sayılmaz. Politika Faz 2.4'te onaylanana kadar deney sonuçlarında sabit yöntem diye sunulmaz.
+`TimelineResolver` için ekipçe kilitlenen politika (`architecture.md` 4.1, `resolution_policy_version` = `trp-0.1.0`): tamamlanmış 2 sn pencerenin tahmini son 1 sn'ye atanır; ilk saniye yalnızca ilk geçerli pencereyle bootstrap edilir; tahmini olmayan saniye `BELIRSIZ` olur. Her `session_id + second_start_ms` için tek karar vardır; saniyeler çifte sayılmaz.
+
+### 3.6.1 `InterruptionEvent` — görünür kesinti
+
+| Alan | Tip | Açıklama |
+| --- | --- | --- |
+| `session_id` | str | Oturum |
+| `label` | `TELEFON` / `DIS_YON` | Kesintinin sınıfı |
+| `start_ms`, `end_ms` | int, int | `[start,end)`, 1 sn dilim sınırlarında; süre ≥ eşik (varsayılan 3000 ms) |
+| `source` | `MODEL` / `REFERENCE` | Model saniye kararlarından mı, insan referansından mı üretildi |
+| `model_id`, `threshold_ms` | str veya null, int | Kaynak model (`REFERENCE` için `null`) ve kullanılan eşik (duyarlılık analizinde 2000 / 5000) |
+
+Kural (`labeling-protocol.md` bölüm 6): aynı sınıftan ardışık en az 3 sn; farklı sınıflar art arda ayrı durumdur; `BELIRSIZ` / `GECIS` saniyesi kesintiyi böler; yumuşatma yoktur. Olay F1 için model ve referans olayları aynı sınıfta ve başlangıç farkı ±2 sn içindeyse bire bir eşleşir. Odak oranının paydasına `BELIRSIZ` ve `GECIS` saniyeleri girmez.
 
 ### 3.7 `ExperimentRecord` — tekrarlanabilir LOSO
 
@@ -148,9 +167,10 @@ local_data/experiments/        # sonuçlar kişisel veriden arındırılmadan pa
 3. **Pencere:** `[0,2000)` ve `[1000,3000)` doğrulanır; sınırdaki kare tek pencereye doğru yarı açık aralık kuralıyla atanır.
 4. **Tekil saniye:** her `session_id + second_start_ms` için tek `SecondDecision`; örtüşme süreyi ikiye katlamaz.
 5. **Eksik kanıt:** `NOT_VISIBLE` ile `NOT_EVALUATED`, `NOT_DETECTED` ile `LOW_CONFIDENCE` ayrılır; eksik veriden zorla ana sınıf üretilmez.
-6. **Etiket:** insan etiketleri aynı video zaman çizelgesine hizalanır; belirsiz/geçiş durumları açık işaretlenir.
-7. **LOSO:** bir katılımcı aynı fold'da train ve testte olamaz.
-8. **Güvenlik:** sentetik örnekler gerçek kişisel veri içermez; gerçek verinin Git'e girmemesi kontrol edilir.
+6. **Etiket:** insan etiketleri aynı video zaman çizelgesine hizalanır; 500/500 eşitlik `GECIS`, belirsiz/etiketsiz durumlar açık işaretlenir; `train_label` kuralı sınır değerlerinde (999/1001 ms, 1000/1000) doğru çalışır.
+7. **Kesinti:** aynı sınıf 3 sn kesinti sayılır; 2 sn `TELEFON` + 2 sn `DIS_YON` sayılmaz; araya giren `BELIRSIZ` böler; ±2 sn bire bir eşleştirme.
+8. **LOSO:** bir katılımcı aynı fold'da train ve testte olamaz.
+9. **Güvenlik:** sentetik örnekler gerçek kişisel veri içermez; gerçek verinin Git'e girmemesi kontrol edilir.
 
 Faz 2'de en az bir küçük sentetik fixture ve test eklenmesi planlanır; **bu belge tek başına testlerin çalıştığı anlamına gelmez**.
 
@@ -159,11 +179,12 @@ Faz 2'de en az bir küçük sentetik fixture ve test eklenmesi planlanır; **bu 
 | Karar | Önerilen sahip | Tamamlanma zamanı |
 | --- | --- | --- |
 | `head_pitch_deg` ve diğer açıların işaret yönü | Bahar | Faz 2.3–2.4 |
-| Sabit `eye_features` alan listesi | Bahar | Faz 2.3–2.4 |
+| ~~Sabit `eye_features` alan listesi~~ | Bahar | **Kapandı (v0.2):** göz açıklık oranı (EAR), sol/sağ |
 | Pencere asgari kare/kapsama eşiği | Bahar + Pınar | Kamera ölçümü / Faz 2.4 |
-| İnsan etiketinden M1 pencere hedefi: iki saniye uzlaşı mı, son saniye mi? | Ortak | Faz 2.4, **eğitimden önce** |
-| `TimelineResolver` başlangıç politikası ve geçiş gecikmesi | Pınar + Bahar | Faz 2.4 |
-| BELİRSİZ ve boş referans saniyelerinin metrikte ele alınışı | Ortak | Faz 2.4 |
+| ~~İnsan etiketinden M1 pencere hedefi~~ | Ortak | **Kapandı:** milisaniyelik çoğunluk kuralı, `train_label` (`labeling-protocol.md` 5.3) |
+| ~~`TimelineResolver` başlangıç politikası~~ | Pınar + Bahar | **Kapandı:** `architecture.md` 4.1, politika 1.0 |
+| ~~BELİRSİZ ve boş referans saniyelerinin metrikte ele alınışı~~ | Ortak | **Kapandı:** kesintiyi böler, odak oranı paydasına girmez (`labeling-protocol.md` 6) |
+| El öznitelik alan adlarının uygulamada doğrulanması | Pınar (P4-03) | Faz 4 |
 | Depolanabilir türetilmiş öznitelikler, erişim, saklama ve imha | Danışman/kurum + ortak | İzin kararı sonrası |
 | Gerçek kamera çözünürlük/FPS, kare düşmesi ve kurulum sabitliği | Bahar | Donanım testleri |
 
@@ -178,4 +199,9 @@ Faz 2'de en az bir küçük sentetik fixture ve test eklenmesi planlanır; **bu 
 - [ ] Etik karara bağlı veri saklama alanları **onay alınmış gibi gösterilmedi**.
 - [ ] Bahar ve Pınar GitHub PR incelemesini tamamladı.
 
-**Referanslar:** `docs/architecture.md` v0.2 (özellikle 4.1, 4.2, 9.1); 8 Haftalık Proje Yol Haritası (Faz 2 ve test/veri yönetimi bölümleri). Bu belge karar taslağıdır; etiketleme/eşik yöntemleri `docs/labeling-protocol.md` ile nihai hâle getirilecektir.
+**Referanslar:** `docs/architecture.md` v0.3 (özellikle 4.1–4.4); `docs/labeling-protocol.md` (bölüm 5, 6, 10); TÜBİTAK 2209-A önerisi v5 (2.4, 2.5, 2.7).
+
+## Revizyon kaydı
+
+- **v0.1 (9 Kasım 2026):** İlk şema ve zaman sözleşmesi.
+- **v0.2 (25 Kasım 2026, #23):** v5 ve etiketleme protokolüyle uyum: `FeatureRecord`'a göz açıklık oranı, el/bilek ve telefon alanları; `WindowRecord`'a özet alanları, `face_detected_ratio`, `train_label`; `HumanLabelInterval` / `SecondReference`'a `label_round` ve `GECIS`; `Prediction` için `BELIRSIZ` gerekçe kodları ve `MAJORITY` tabanı; yeni `InterruptionEvent`; çift etiketleme yerine test–tekrar test; kapanan açık kararlar işaretlendi.
