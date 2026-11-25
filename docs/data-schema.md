@@ -95,11 +95,11 @@ Gerçek kişiye ait isim, iletişim ve kimlik eşlemesi bu şemada **bulunmaz**.
 | --- | --- | --- |
 | `session_id`, `window_index` | str, int | Oturum ve pencere |
 | `start_ms`, `end_ms` | int, int | `[start,end)`; varsayılan pencere uzunluğu 2.000 ms |
-| `aggregates` | sürümlü sayısal alanlar | Her sayısal `FeatureRecord` alanı için `<alan>_mean`, `<alan>_std` (değişkenlik) ve `<alan>_delta` (son geçerli değer − ilk geçerli değer); boolean alanlar için oran (`<alan>_ratio`). Geçerli değer yoksa `null` |
+| `aggregates` | sürümlü sayısal alanlar | Her sayısal `FeatureRecord` alanı için `<alan>_mean`, `<alan>_std` (değişkenlik) ve `<alan>_delta` (son geçerli değer − ilk geçerli değer); boolean alanlar için oran (`<alan>_ratio`). Geçerli değer yoksa `null` Ek oranlar: `phone_visible_ratio` (değerlendirilen karelerde `phone_status = VISIBLE` oranı) ve `hand_detected_ratio` (`hand_status = VALID` oranı); değerlendirilmeyen kare paydaya girmez. Alanlar salt okunurdur (#35) |
 | `face_detected_ratio` | float [0,1] veya null | Penceredeki karelerden `face_status = VALID` olanların oranı; M0'ın %50 `BELIRSIZ` kuralı bunu kullanır |
 | `available_frame_count` | int ≥ 0 | Penceredeki işlenen geçerli kare sayısı |
-| `coverage_ratio` | float [0,1] veya null | Kanıt kapsaması, hesaplama tanımı belgelenmeli |
-| `is_valid`, `invalid_reason` | bool, str veya null | Geçerlilik kararı; boş pencere geçersizdir |
+| `coverage_ratio` | float [0,1] veya null | Penceredeki kare sayısı / (pencere süresi × kaynak `nominal_fps`), en fazla 1; FPS bilinmiyorsa `null` (#35) |
+| `is_valid`, `invalid_reason` | bool, str veya null | Geçerlilik kararı; boş pencere geçersizdir (`invalid_reason = EMPTY`, kayıt tipi de bunu zorunlu kılar) |
 | `train_label` | `MATERYAL` / `TELEFON` / `DIS_YON` / `GECIS` / `UNUSED` veya null | İnsan etiketinden hesaplanan M1 eğitim hedefi (`labeling-protocol.md` 5.3); `GECIS` ve `UNUSED` eğitime girmez; etiket yoksa (canlı mod) `null` |
 | `feature_version` | str | Girdi uyumu |
 
