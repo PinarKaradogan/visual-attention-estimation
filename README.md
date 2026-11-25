@@ -1,4 +1,7 @@
 # visual-attention-estimation
+
+[![CI](https://github.com/PinarKaradogan/visual-attention-estimation/actions/workflows/ci.yml/badge.svg)](https://github.com/PinarKaradogan/visual-attention-estimation/actions/workflows/ci.yml)
+
 ## Development Setup (Windows)
 
 ### Requirements
