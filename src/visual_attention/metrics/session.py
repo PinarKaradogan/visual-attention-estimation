@@ -4,7 +4,7 @@ Girdi her zaman 1 sn'lik, örtüşmeyen etiket dizisidir (TimelineResolver çık
 LabelAligner'ın referansı). Model ve referans aynı fonksiyonlardan geçer; böylece
 "aynı ardışık-zaman kuralı" iki tarafa da aynen uygulanır.
 
-Sürüm 0.1 kararları (docs/labeling-protocol.md'de kilitlenecek):
+Kilitli kurallar (docs/labeling-protocol.md §6, architecture.md §4.4):
 - Yumuşatma uygulanmaz.
 - Kesinti = aynı MATERYAL dışı sınıfın kesintisiz >= 3 sn sürmesi. Araya giren
   BELIRSIZ veya GECIS saniyesi koşuyu böler.

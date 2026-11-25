@@ -78,3 +78,9 @@ def test_window_beyond_session_raises():
 def test_model_cannot_predict_gecis():
     with pytest.raises(ValueError):
         Prediction("S01", 0, 0, 2000, "M1", Label.GECIS)
+
+
+def test_window_longer_than_short_session_raises():
+    # PR #24 inceleme notu 3: 1500 ms oturumda [0, 2000) penceresi kabul edilmemeli
+    with pytest.raises(ValueError):
+        resolve_timeline(windows([M]), session_duration_ms=1500)
