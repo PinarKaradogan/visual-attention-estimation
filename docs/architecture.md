@@ -106,7 +106,7 @@ PARALEL, SADECE İZİNLİ ARAŞTIRMA / ÇEVRİMDIŞI EĞİTİM YOLU
 
 **Sorun:** `[0,2)` ve `[1,3)` pencerelerinin kararları aynı saniyeye temas edebilir; pencere etiketlerinin sürelerini toplamak geçersizdir. `Classifier`, yalnızca **pencere tahmini** üretir. Süre ve kesinti hesabı `TimelineResolver` sonrasında yapılır.
 
-**Ekipçe kilitlenen deterministik politika (`resolution_policy_version` = `1.0`):**
+**Ekipçe kilitlenen deterministik politika (`resolution_policy_version` = `trp-0.1.0`, kodda `core.constants.RESOLUTION_POLICY_VERSION`):**
 
 1. Oturum zamanı `[0,1000)`, `[1000,2000)` ... şeklinde **örtüşmeyen** 1.000 ms dilimlere ayrılır. Her dilim için **en fazla bir** `SecondDecision` saklanır.
 2. Tamamlanmış `[t-2000,t)` penceresinin tahmini, öncelikle **son** `[t-1000,t)` dilimine atanır. Böylece `[0,2)` penceresi `[1,2)` saniyesini, `[1,3)` penceresi `[2,3)` saniyesini kararlaştırır. Aynı saniyeyi iki pencere oylamaz; aşağıdaki başlangıç kuralı hariç hiçbir saniye yeniden yazılmaz.

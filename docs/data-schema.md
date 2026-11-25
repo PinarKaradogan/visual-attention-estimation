@@ -110,9 +110,9 @@ Pencereler `[0,2000)`, `[1000,3000)`, `[2000,4000)` ... şeklindedir. Eksik değ
 | Kayıt | Temel alanlar | Açıklama |
 | --- | --- | --- |
 | `HumanLabelInterval` | `session_id`, `annotator_id` (etiketleyici kodu, ör. `A1`), `label_round` (`r1` / `r2` / `final`), `start_ms`, `end_ms`, `label`, `label_version` | İnsan gözlemcinin ELAN'daki zaman aralığı etiketi; `label` ∈ `MATERYAL` / `TELEFON` / `DIS_YON` / `BELIRSIZ` |
-| `SecondReference` | `session_id`, `second_start_ms`, `label`, `validity`, `annotator_id`, `label_round`, `label_version`, `agreement_status` | `LabelAligner`'ın ürettiği tekil 1 saniye referansı; `label` ∈ ana sınıflar / `UNCERTAIN` / `GECIS` / `UNLABELED` |
+| `SecondReference` | `session_id`, `second_start_ms`, `label`, `validity`, `annotator_id`, `label_round`, `label_version`, `agreement_status` | `LabelAligner`'ın ürettiği tekil 1 saniye referansı; `label` ∈ `MATERYAL` / `TELEFON` / `DIS_YON` / `BELIRSIZ` / `GECIS` (kodda `core.labels.Label`); `validity` belirsizliğin kaynağını ayırır: `LABELED` / `UNCERTAIN` / `UNLABELED` |
 
-İnsan referans sınıfları `MATERYAL`, `TELEFON`, `DIS_YON`; ELAN'daki `BELIRSIZ` etiketi şemada `UNCERTAIN`, hiçbir aralığa düşmeyen süre `UNLABELED` olur (ana sınıf değildir). Bir saniyede bir ana sınıf 500 ms'den fazlasını kaplıyorsa saniye o sınıfı alır; `UNCERTAIN` + `UNLABELED` 500 ms veya fazlaysa `UNCERTAIN`; aksi halde (ör. 500/500) `GECIS` (`labeling-protocol.md` 5.2). `agreement_status`, tekrar setindeki saniyelerde `r1` ile `r2` karşılaştırmasını gösterir: `AGREE` / `DISAGREE` / `NOT_IN_RETEST`. Etiket güvenirliği, videonun en az %25'inin aynı etiketleyici tarafından en az 4 hafta sonra kör olarak yeniden etiketlenmesiyle (test–tekrar test) Cohen's Kappa ile ölçülür.
+İnsan referans sınıfları `MATERYAL`, `TELEFON`, `DIS_YON`; ELAN'daki `BELIRSIZ` etiketi (`validity` = `UNCERTAIN`) ve hiçbir aralığa düşmeyen süre (`validity` = `UNLABELED`) 1 sn referansta `Label.BELIRSIZ` olur; model tarafıyla aynı değer kullanıldığı için metrikler iki tarafa aynı kuralla uygulanır (ana sınıf değildir). Bir saniyede bir ana sınıf 500 ms'den fazlasını kaplıyorsa saniye o sınıfı alır; belirsiz + etiketsiz süre 500 ms veya fazlaysa `BELIRSIZ`; aksi halde (ör. 500/500) `GECIS` (`labeling-protocol.md` 5.2). `agreement_status`, tekrar setindeki saniyelerde `r1` ile `r2` karşılaştırmasını gösterir: `AGREE` / `DISAGREE` / `NOT_IN_RETEST`. Etiket güvenirliği, videonun en az %25'inin aynı etiketleyici tarafından en az 4 hafta sonra kör olarak yeniden etiketlenmesiyle (test–tekrar test) Cohen's Kappa ile ölçülür.
 
 ### 3.6 `Prediction` ve `SecondDecision`
 
@@ -121,7 +121,7 @@ Pencereler `[0,2000)`, `[1000,3000)`, `[2000,4000)` ... şeklindedir. Eksik değ
 | `Prediction` | `session_id`, `window_index`, `start_ms`, `end_ms`, `model_id` (`M0` / `M1` / `MAJORITY`), `label`, `score_or_null`, `reason` | Pencere tahmini; `BELIRSIZ` gerekçeleri: `LOW_FACE_RATIO`, `RULE_CONFLICT` (M0), `LOW_CONFIDENCE` (M1) |
 | `SecondDecision` | `session_id`, `second_start_ms`, `label`, `source_window_start_ms`, `source_window_end_ms`, `resolution_policy_version`, `coverage_ratio`, `reason` | Tekil saniye kararı |
 
-`TimelineResolver` için ekipçe kilitlenen politika (`architecture.md` 4.1, `resolution_policy_version` = `1.0`): tamamlanmış 2 sn pencerenin tahmini son 1 sn'ye atanır; ilk saniye yalnızca ilk geçerli pencereyle bootstrap edilir; tahmini olmayan saniye `BELIRSIZ` olur. Her `session_id + second_start_ms` için tek karar vardır; saniyeler çifte sayılmaz.
+`TimelineResolver` için ekipçe kilitlenen politika (`architecture.md` 4.1, `resolution_policy_version` = `trp-0.1.0`): tamamlanmış 2 sn pencerenin tahmini son 1 sn'ye atanır; ilk saniye yalnızca ilk geçerli pencereyle bootstrap edilir; tahmini olmayan saniye `BELIRSIZ` olur. Her `session_id + second_start_ms` için tek karar vardır; saniyeler çifte sayılmaz.
 
 ### 3.6.1 `InterruptionEvent` — görünür kesinti
 
@@ -133,7 +133,7 @@ Pencereler `[0,2000)`, `[1000,3000)`, `[2000,4000)` ... şeklindedir. Eksik değ
 | `source` | `MODEL` / `REFERENCE` | Model saniye kararlarından mı, insan referansından mı üretildi |
 | `model_id`, `threshold_ms` | str veya null, int | Kaynak model (`REFERENCE` için `null`) ve kullanılan eşik (duyarlılık analizinde 2000 / 5000) |
 
-Kural (`labeling-protocol.md` bölüm 6): aynı sınıftan ardışık en az 3 sn; farklı sınıflar art arda ayrı durumdur; `BELIRSIZ` / `GECIS` / `UNCERTAIN` saniyesi kesintiyi böler; yumuşatma yoktur. Olay F1 için model ve referans olayları aynı sınıfta ve başlangıç farkı ±2 sn içindeyse bire bir eşleşir. Odak oranının paydasına `BELIRSIZ` ve `GECIS` saniyeleri girmez.
+Kural (`labeling-protocol.md` bölüm 6): aynı sınıftan ardışık en az 3 sn; farklı sınıflar art arda ayrı durumdur; `BELIRSIZ` / `GECIS` saniyesi kesintiyi böler; yumuşatma yoktur. Olay F1 için model ve referans olayları aynı sınıfta ve başlangıç farkı ±2 sn içindeyse bire bir eşleşir. Odak oranının paydasına `BELIRSIZ` ve `GECIS` saniyeleri girmez.
 
 ### 3.7 `ExperimentRecord` — tekrarlanabilir LOSO
 
