@@ -1,6 +1,8 @@
 """Video okuma: kayıtlı dosya, canlı kamera ve sahte kaynaktan oturum video zamanlı kareler."""
 
 from visual_attention.capture.base import VideoSource
+from visual_attention.capture.fake_source import FakeVideoSource
+from visual_attention.capture.file_source import FileVideoSource
 from visual_attention.capture.records import (
     CaptureStats,
     FrameRecord,
@@ -11,6 +13,8 @@ from visual_attention.capture.records import (
 
 __all__ = [
     "CaptureStats",
+    "FakeVideoSource",
+    "FileVideoSource",
     "FrameRecord",
     "FrameTimingTracker",
     "SourceMode",
