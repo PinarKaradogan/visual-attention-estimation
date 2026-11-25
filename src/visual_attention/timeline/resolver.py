@@ -50,7 +50,8 @@ def resolve_timeline(
         second_start_ms'e göre sıralı, boşluksuz SecondDecision listesi.
 
     Raises:
-        ValueError: Pencere uzunluğu 2 sn değilse, saniye sınırına oturmuyorsa, farklı
+        ValueError: Pencere uzunluğu 2 sn değilse, saniye sınırına oturmuyorsa, oturum
+            süresini aşıyorsa, farklı
             oturum/model karışmışsa veya aynı saniyeyi iki pencere hedefliyorsa.
     """
     if session_duration_ms <= 0:
@@ -67,9 +68,9 @@ def resolve_timeline(
             raise ValueError(f"Pencere {WINDOW_MS} ms olmalı: {p}")
         if p.start_ms % SECOND_MS != 0:
             raise ValueError(f"Pencere saniye sınırında başlamalı: {p}")
-        target = (p.end_ms - SECOND_MS) // SECOND_MS
-        if target >= n_seconds:
+        if p.end_ms > session_duration_ms:
             raise ValueError(f"Pencere oturum süresini aşıyor: {p}")
+        target = (p.end_ms - SECOND_MS) // SECOND_MS
         if target in by_target_second:
             raise ValueError(f"{target}. saniyeyi birden fazla pencere hedefliyor")
         by_target_second[target] = p
