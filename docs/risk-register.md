@@ -1,21 +1,21 @@
 Faz 1.4 — Teknik Fizibilite ve Risk Kaydı
 Proje: Masa Başında Kâğıt Tabanlı Çalışmada Görsel Dikkat Durumunun ve Odak Süresinin Bilgisayarlı Görü ile Kestirimi
 Ekip: Bahar ve Pınar
-Hazırlanma tarihi: 9 Kasım 2026
+Hazırlanma tarihi: 9 Kasım 2026 (güncelleme: 25 Kasım 2026, #30 — öneri v5 uyumu ve iki geliştiricili plan)
 İlgili faz / iş paketi: Faz 1 — Hazırlık, kapsam ve analiz / İP1
 Durum: Başlangıç risk envanteri hazır; ölçüm sonuçları, donanım bilgileri ve ekip teyidi bekleniyor.
-Kaynak: Gorsel_Dikkat_Projesi_8_Haftalik_Yol_Haritasi(1).docx (özellikle s. 2–3, 5–7); docs/project-charter.md; docs/ethics-checklist.md.
+Kaynak: TÜBİTAK 2209-A önerisi v5 (§3.2 Risk Yönetimi, kapsamın asıl kaynağı); docs/project-charter.md v2; docs/ethics-checklist.md; docs/labeling-protocol.md; Gorsel_Dikkat_Projesi_8_Haftalik_Yol_Haritasi(1).docx.
 Önemli: Bu belge risklerin ön değerlendirmesidir; gerçekleştirilmeyen testler yapılmış gibi işaretlenmez. Teknik fizibilite henüz doğrulanmış değildir. Gerçek gönüllülerden tanınabilir görüntü kaydı, gerekli etik/kurumsal değerlendirme ve katılımcı süreçleri tamamlanmadan başlatılmaz.
 
 1. Sabit araştırma kapsamı
 - Tek kamerayla kâğıt tabanlı masa başı çalışma esnasında gözlenebilir yönelimin incelenmesi.
 - Ana sınıflar: MATERYAL, TELEFON, DIŞ_YÖN; BELİRSİZ ana sınıf değil, özel çıktıdır.
 - 8–10 yetişkin gönüllü; kişi başına 20 dakika senaryolu ve 10 dakika serbest oturum (yalnız gerekli izinlerden sonra).
-- Baş pozu, seçili yüz/göz göstergeleri ve görünür telefon ipuçları.
+- Baş pozu, göz açıklık oranı, el/bilek göstergeleri (yazma, telefona uzanma, telefonu tutma) ve görünür telefon ipuçları (v5 §2.4).
 - 2 saniyelik analiz penceresi, 1 saniyelik kaydırma; yönelim süreleri tekil zaman adımları üzerinden hesaplanır.
-- M0 kural tabanlı yaklaşım; M1 Random Forest; katılımcı bazlı LOSO.
-- Macro-F1, sınıf bazlı F1, Cohen's Kappa, BELİRSİZ oranı, süre MAE ve kesinti sayısı hatası.
-- Yerel prototip için hedef en az 10 FPS; henüz ölçülmüş performans değildir.
+- M0 kural tabanlı yaklaşım; M1 Random Forest; çoğunluk-sınıf tabanı; katılımcı bazlı LOSO.
+- Kişi-bazlı makro-F1, sınıf bazlı F1, BELİRSİZ oranı, odak süresi MAE, kesinti sayısı hatası, kesinti olayı F1 (±2 sn), Bland–Altman; etiket güvenirliği için test–tekrar test Cohen κ.
+- Yerel prototip için hedef en az 10 FPS (GPU kullanılmadan, yalnız işlemciyle; v5 H5); henüz ölçülmüş performans değildir.
 - Zihinsel dikkat veya öğrenme başarısının doğrudan ölçüldüğü iddia edilmez.
 2. Risk puanlama ve durum standardı
 Olasılık (O) ve etki (E) 1–5 arasında başlangıç tahmini puanlardır: 1=düşük, 3=orta, 5=çok yüksek. Skor = O × E. Öncelik için operasyonel eşikler: 1–5 düşük, 6–11 orta, 12–25 yüksek. Bu eşikler araştırma sonucu veya TÜBİTAK'ın resmî ölçeği değil, ekibin iş takibi içindir.
@@ -29,15 +29,21 @@ R03	Telefonun yalnız görünür olmasının kullanım sanılması veya kullanı
 R04	Yüz kaybı/eksik öznitelik durumunda zorla ana sınıf atanması	3	5	15	Pınar	Kayıp özellik varken güvenli görünen sınıf tahmini	Eksik değer bayrağı; BELİRSİZ çıkışı ve izlenebilir gerekçe	Birim testleri: eksik yüz/göz/telefon kanıtı	Açık
 R05	İki saniyelik örtüşen pencerelerin iki kez sayılması; odak süresi hatası	3	5	15	Pınar	Toplam yönelim süresinin oturum süresini aşması	Bir saniyelik tekil zaman adımı hesabı; sınır koşulu testleri	Sentetik zaman çizelgesi ve beklenen süre karşılaştırması	Açık
 R06	Kesinti süresinin ≥3 sn kuralında geçiş/sınır hataları	3	4	12	Pınar	2,9/3,0/3,1 sn örneklerinde tutarsız sayım	Açık zaman damgası ve süre tanımı; sınır testleri	Sentetik test tablosu, test raporu	Açık
-R07	Yerel bilgisayarda yetersiz hız / gecikme; 10 FPS hedefinin altında kalma	3	4	12	Bahar	Düşük FPS, yüksek gecikme, işlemci yoğunluğu	Çözünürlük/işleme frekansı denemeleri; profil çıkarma; hafif bileşenler	İki makinede FPS, gecikme ve ortam bilgisi	Açık
+R07	Yerel bilgisayarda yetersiz hız / gecikme; 10 FPS hedefinin altında kalma	3	4	12	Bahar	Düşük FPS, yüksek gecikme, işlemci yoğunluğu	Çözünürlük/işleme frekansı denemeleri; profil çıkarma; hafif bileşenler; v5 B planı: çözünürlüğü kontrollü düşürme ve seyrek tespit	Resmî ölçüm v5'teki bilgisayarda (Pınar, i7-12650H) GPU kullanılmadan; Bahar'ın ön ölçümü ≈ 26 FPS (yalnız işlemci, kamerasız)	Açık
 R08	İki ekip bilgisayarında kamera, Python veya paket uyumsuzluğu	3	3	9	Pınar + Bahar	Tek makinede çalışan örneğin diğerinde hata vermesi	Sabitlenmiş bağımlılıklar, sürüm/env kayıtları; iki bilgisayarda kurulum testi	Kurulum günlüğü ve smoke test çıktıları	Açık
-R09	Etiket kuralının yoruma açık olması; düşük gözlemciler arası uyum	4	5	20	Pınar	Çift etiketlerde uyuşmazlık; κ < 0,70 erken uyarı	Ayrıntılı etiket kılavuzu, örnekler, bağımsız çift etiketleme; uyuşmazlık günlüğü	İzin sonrası tüm katılımcı/ana sınıfları kapsayan ≥%25 çift etiketleme; Cohen's Kappa	Açık
+R09	Etiket kuralının yoruma açık olması; düşük test–tekrar test uyumu (κ < 0,70)	4	5	20	Pınar	Tekrar etiketlemede uyuşmazlık; ortak denemede farklı kararlar	Ayrıntılı etiket kılavuzu (labeling-protocol.md v0.2), örnekler, uyuşmazlık günlüğü; v5 B planı: karışan kesitler kılavuza eklenir, şüpheli segmentler kör olarak yeniden işaretlenir	≥ %25 test–tekrar test (aynı etiketleyici, ≥ 4 hafta ara, kör); genel ve sınıf bazlı Cohen κ; ilk ve düzeltilmiş uyum birlikte raporlanır	Açık
 R10	Sınıf dengesizliği (özellikle TELEFON / DIŞ_YÖN); yanıltıcı yüksek accuracy	3	4	12	Pınar + Bahar	Çok az örnek/oturum segmenti	Senaryolu blok dağılım kontrolü; sınıf bazlı F1 ve macro-F1	Etiketli veri sonrası sınıf/süre dağılım raporu	Açık
 R11	LOSO'da aynı katılımcının hem eğitim hem testte kalması; veri sızıntısı	3	5	15	Pınar + Bahar	Katılımcı ID'leri kümelerde kesişiyor	Katılımcı bazlı fold üretimi; eğitim içinde önişleme/eşik ayarı; otomatik ayrım testi	Train/test participant_id kesişimi sıfır	Açık
-R12	Etik süreç gecikmesi veya gönüllü kaydı ön koşullarının tamamlanmaması	4	5	20	Ortak	Hafta 3'te resmî karar yok	Kayıt başlatmama; sentetik/izinli teknik geliştirmeyi sürdürme; takvimi danışmanla güncelleme	Etik durum kaydı; kurumsal yazışma referansı (kişisel verisiz)	Açık
+R12	Etik izin belgesinin gecikmesi; 2–5 Aralık kayıt penceresinin kaçması	4	5	20	Ortak	1 Aralık itibarıyla izin belgesi yok	İzin olmadan kayıt yok; v5 B planı: işlem hattı sentetik ve açık lisanslı videolarla tamamlanır, kayıtlar izin gelince kademeli yapılır ve etiketleme ilk kayıttan başlar; takvim danışmanla güncellenir	Etik durum kaydı (ethics-checklist.md §9)	Açık
 R13	Ham video/etiket/kimlik eşlemesinin kazara GitHub'a veya buluta gitmesi	3	5	15	Pınar + Bahar	Takip edilen data dosyaları / yanlış commit	.gitignore, PR veri kontrolü; ayrı korumalı depolama; erişim kısıtları	git status, test amaçlı sahte dosyalarla ignore doğrulaması	Açık
 R14	Az katılımcıdan yeni kişilere genelleme zayıflığı	4	4	16	Ortak	LOSO fold sonuçları arasında yüksek değişim	Katılımcı bazlı sonuç/hata dağılımını raporlama; iddiayı sınırlama	Fold bazlı macro-F1/F1, BELİRSİZ oranı ve sınırlılıklar	Açık
-R15	Bağımlı işlerin, iki kişilik ekipte gecikmesi	3	3	9	Ortak	Bloke Issue ve yığılan PR	Haftalık kontrol; görev başına sahibi, bağımlılığı ve kabul ölçütü	Projects panosu; haftalık karar notları	Açık
+R15	Bağımlı işlerin, iki kişilik ekipte gecikmesi	3	3	9	Ortak	Bloke Issue ve yığılan PR	Günlük kontrol; görev başına sahibi, bağımlılığı ve kabul ölçütü; Blocked sütunu	Projects panosu; günlük durum notları	Açık
+R16	İki etiketleyicinin kuralları farklı yorumlaması; veri tutarsızlığı	3	4	12	Pınar + Bahar	Ortak denemede sınıf veya sınır farkları	Etiketleme öncesi zorunlu ortak deneme (#37); protokoldeki örnekler; tekrarı ilk etiketleyen yapar	Ortak deneme notu; uyuşmazlık günlüğü	Açık
+R17	PR'ların bağımlılık sırasına aykırı merge edilmesi; çakışma ve bozuk main	3	4	12	Pınar	Bağımlılığı main'de olmayan PR'ın merge'ü; CI kırmızı	Bağımlılık zinciri kuralı (bağımlı işler aynı kişide); Ready sütununa yalnız bağımlılığı merge edilmiş işler; merge öncesi CI	Pano geçmişi; CI sonuçları	Açık
+R18	Elde tutulan telefonun nesne tespitinde kaçırılması; TELEFON sınıfında düşük recall	3	4	12	Bahar	Canlı denemede elde telefonun düşük güvenle ya da hiç algılanmaması	Telefon tespiti el göstergeleriyle birlikte yorumlanır (v5 §2.4); #33'te canlı deneme (kayıtsız); güven eşiği yalnız eğitimde ayarlanır	#33 PR notu; sınıf bazlı F1	Açık
+R19	Test–tekrar test etiketlemesinin teslim tarihinden sonraya kalması	5	3	15	Pınar	İlk etiketleme 2–5 Aralık'ta; ≥ 4 hafta kuralı	Kural kısaltılmaz; tekrar setindeki videolar ilk etiketlenir; tekrar etiketleme Ocak başında yapılıp sonuçlar eklenir	labeling-protocol.md §7; etiket sürüm kayıtları (r1/r2/final)	Açık
+R20	Bahar'ın video erişimi için etik değişiklik onayının gelmemesi	3	4	12	Pınar	Danışman/kurul yanıtı olumsuz ya da gecikmeli	Onay gelene kadar Bahar video görmez; etiketlemenin tamamı Pınar'da (≈ 25 sa ilk etiketleme); Bahar'ın iş yükü kod tarafına kaydırılır	ethics-checklist.md §5.1 ve §9	Açık
+R21	10 günlük takvimde iş yükü yoğunluğu; kapsam baskısı	4	4	16	Pınar	Ready'de bekleyen ya da Blocked'da kalan kartlar	Kapsam daraltılmaz; bağımlılık zinciri, günlük durum notu, kritik yol (#26 → #32, #35 → #29) önceliği; v5 B planı (önerinin kendi önlemi): analiz önceliği senaryolu oturumlar, serbest oturum keşifsel düzeyde raporlanır, gerekirse prototip arayüzü komut satırı oturum özetine sadeleştirilir, H1–H5 ölçütleri değişmez	Pano ve PR akışı	Açık
 
 
 Puanlar: Gerçek saha ölçümlerine değil ön değerlendirmeye dayanır. Ekip gözden geçirmesiyle değiştirilebilir; yüksek skor ≠ riskin gerçekleştiği anlamına gelmez.
@@ -53,9 +59,9 @@ F2 — Bilgisayar ve yerel performans (Bahar + Pınar)
 Her bilgisayar için doldur:
 Alan	Bahar bilgisayarı	Pınar bilgisayarı
 İşletim sistemi	Windows 11 Pro for Workstations (build 26200)	Ölçülecek
-Python sürümü	3.13.16 (conda; proje ortamı henüz kurulmadı)	Ölçülecek
-CPU / RAM	AMD Ryzen 7 7840HS (8 çekirdek / 16 izlek) / 16 GB	Ölçülecek
-GPU (varsa)	NVIDIA RTX 4050 Laptop 6 GB + AMD Radeon 780M (dahili)	Ölçülecek
+Python sürümü	3.13.16 (conda; proje ortamı henüz kurulmadı)	Proje ortamı: Python 3.11.9 (.venv); doğrulanacak
+CPU / RAM	AMD Ryzen 7 7840HS (8 çekirdek / 16 izlek) / 16 GB	Intel Core i7-12650H (12. nesil, 2,30 GHz) / 16 GB, 3200 MT/sn (v5 §3.3)
+GPU (varsa)	NVIDIA RTX 4050 Laptop 6 GB + AMD Radeon 780M (dahili)	NVIDIA RTX 4050 Laptop 6 GB (v5 §3.3; FPS ölçümünde kullanılmaz)
 Kamera aygıtı / çözünürlük	HP True Vision FHD (dahili, ekran üstü); 640×480, 1280×720, 1920×1080; ham yakalama ~30 FPS (720p/1080p), 13,3 FPS (640×480)	Ölçülecek
 Ortalama FPS	Ölçülecek (işlem hattı henüz yok)	Ölçülecek
 Gecikme (ms)	Ölçülecek (işlem hattı henüz yok)	Ölçülecek
@@ -68,8 +74,8 @@ F3 — Etiketlenebilirlik ve geçişler (Pınar)
 - [ ] BELİRSİZ için eksik yüz, telefon kanıtı, örtülme ve geçiş koşulları listelendi.
 - [ ] “Telefon görünüyor fakat kullanılmıyor” örneği aktif TELEFON etiketi sayılmıyor.
 - [ ] İki etiketleyicinin farklı karara varabileceği örnekler uyuşmazlık listesine eklendi.
-- [ ] İzinli gerçek veride ≥%25 bağımsız çift etiketleme ve Cohen's Kappa takvimi belirlendi (henüz gerçekleştirilmedi).
-Kabul kanıtı: Faz 2 docs/labeling-protocol.md için senaryo/karar listesi; izin sonrası çift etiketleme kayıtları.
+- [x] Test–tekrar test takvimi belirlendi: ≥ %25, aynı etiketleyici, ≥ 4 hafta ara (labeling-protocol.md §7); henüz gerçekleştirilmedi.
+Kabul kanıtı: docs/labeling-protocol.md v0.2; izin sonrası r1/r2 etiket kayıtları ve κ raporu.
 F4 — Pencereleme, süre ve kesinti (Pınar)
 - [ ] 2 sn pencere / 1 sn adım ve eksik zaman damgası kuralları birim test kapsamına alındı.
 - [ ] Örtüşen pencerelerin süreleri birbiriyle topl anmayacak; tekil zaman adımları sayılacak.
@@ -108,6 +114,7 @@ Etiket güvenilirliği / LOSO / M0–M1	Ortak	Faz 3	Gerekli izin, izinli veri	Ki
 Tarih	Karar / gözlem	Kaynak / kanıt	Sorumlu	Sonraki işlem
 2026-11-09	Risk envanteri ilk sürümü oluşturuldu; teknik ölçüm yapılmadı	Bu belge	Pınar + Bahar inceleyecek	Donanım envanterini ve kamera koşullarını doldur
 2026-11-09	Bahar bilgisayarı: dahili kamerayla ham yakalama ölçüldü; 720p/1080p ~30 FPS, 640×480 yalnız 13,3 FPS (3 sn ölçüm, görüntü kaydedilmedi). Düşük çözünürlükteki yavaşlamanın otomatik pozlama/ışıktan kaynaklandığı tahmin ediliyor, doğrulanmadı.	OpenCV 4 + DirectShow, kişisel veri saklanmadı	Bahar	R02/R07 için ışık koşullu tekrar ölçümü; dahili kameranın kâğıt ve elleri görüp görmediği R01 kadraj testinde incelenecek (gerekirse harici USB kamera)
+2026-11-25	Risk kaydı öneri v5'e ve 10 günlük iki geliştiricili plana göre güncellendi; R16–R21 eklendi, R07/R09/R12 güncellendi	#30	Pınar	Bahar incelemesi
 
 
 Test kayıt şablonu (her test için kopyala)
@@ -130,5 +137,5 @@ Aksiyon / Issue:
 - docs/project-charter.md — sabit araştırma kapsamı.
 - docs/literature-notes.md — bilimsel dayanak ve iddia sınırları.
 - docs/ethics-checklist.md — etik/KVKK bağımlılıkları.
-- docs/architecture.md, docs/data-schema.md, docs/labeling-protocol.md — Faz 2'de hazırlanacak; henüz tamamlanmadı.
+- docs/architecture.md v0.3, docs/data-schema.md v0.2, docs/labeling-protocol.md v0.2 — öneri v5 ile uyumlu.
 Son not: Başlangıç risk puanları ekip tahminidir. Fizibiliteyi doğrulayan şey dosyanın hazırlanması değil, ölçüm/test kanıtlarının belgeye işlenmesidir.
