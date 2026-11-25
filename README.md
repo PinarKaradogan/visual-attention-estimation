@@ -25,4 +25,18 @@ py -3.11 -m venv .venv
 
 Expected result: 3 tests passed and Ruff checks passed.
 
+### Model files (not in Git)
+MediaPipe model files are downloaded separately into `models/` (ignored by Git).
+
+| File | Used by | Source | License |
+| --- | --- | --- | --- |
+| `models/face_landmarker.task` | `features/face.py` (P4-02) | https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task ([model card](https://huggingface.co/litert-community/MediaPipe-FaceLandmarker)) | Apache 2.0 |
+
+```powershell
+New-Item -ItemType Directory -Force models
+Invoke-WebRequest https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task -OutFile models/face_landmarker.task
+```
+
+Tests that need a model file are skipped when it is missing (as in CI).
+
 Do not commit `.venv/`, real participant data or secrets.

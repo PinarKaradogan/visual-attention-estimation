@@ -74,7 +74,7 @@ Gerçek kişiye ait isim, iletişim ve kimlik eşlemesi bu şemada **bulunmaz**.
 | --- | --- | --- |
 | `session_id`, `frame_index`, `timestamp_ms` | str, int, int | Kaynak izlenebilirliği |
 | `feature_version` | str | Çıkarıcı/öznitelik kümesi sürümü |
-| `head_yaw_deg`, `head_pitch_deg`, `head_roll_deg` | float veya null | Baş yönelimi, **derece**; pozitif yön tanımı açık karar |
+| `head_yaw_deg`, `head_pitch_deg`, `head_roll_deg` | float veya null | Baş yönelimi, **derece**, kişiye göre: `pitch > 0` baş aşağı eğik (kâğıda bakma yönü), `yaw > 0` baş kişinin sağına dönük, `roll > 0` baş kişinin sağ omzuna yatık. MediaPipe yüz dönüşüm matrisinden hesaplanır (burun yönünden pitch/yaw, yüzün yukarı yönünden roll); ayrıntı `features/face.py` |
 | `eye_aspect_ratio_left`, `eye_aspect_ratio_right` | float veya null | Göz açıklık oranı (EAR); yardımcı göstergedir, bakış noktası ölçülmez (v5 2.4) |
 | `hand_count` | int 0–2 veya null | Algılanan el sayısı; el bileşeni çalışmadıysa `null` |
 | `left_wrist_x`, `left_wrist_y`, `right_wrist_x`, `right_wrist_y` | float [0,1] veya null | Bilek konumu, görüntü genişliği/yüksekliğine göre normalize; el yoksa `null`. Yazma hareketi pencere düzeyinde bu alanların değişkenliğinden hesaplanır |
@@ -178,7 +178,7 @@ Faz 2'de en az bir küçük sentetik fixture ve test eklenmesi planlanır; **bu 
 
 | Karar | Önerilen sahip | Tamamlanma zamanı |
 | --- | --- | --- |
-| `head_pitch_deg` ve diğer açıların işaret yönü | Bahar | Faz 2.3–2.4 |
+| ~~`head_pitch_deg` ve diğer açıların işaret yönü~~ | Bahar | **Kapandı (#32):** şablondan ve canlı kontrolle doğrulandı, §3.3 |
 | ~~Sabit `eye_features` alan listesi~~ | Bahar | **Kapandı (v0.2):** göz açıklık oranı (EAR), sol/sağ |
 | Pencere asgari kare/kapsama eşiği | Bahar + Pınar | Kamera ölçümü / Faz 2.4 |
 | ~~İnsan etiketinden M1 pencere hedefi~~ | Ortak | **Kapandı:** milisaniyelik çoğunluk kuralı, `train_label` (`labeling-protocol.md` 5.3) |
