@@ -50,9 +50,9 @@ def resolve_timeline(
         second_start_ms'e göre sıralı, boşluksuz SecondDecision listesi.
 
     Raises:
-        ValueError: Pencere uzunluğu 2 sn değilse, saniye sınırına oturmuyorsa, oturum
-            süresini aşıyorsa, farklı
-            oturum/model karışmışsa veya aynı saniyeyi iki pencere hedefliyorsa.
+        ValueError: Pencere uzunluğu 2 sn değilse, saniye sınırına oturmuyorsa,
+            oturum süresini aşıyorsa, farklı oturum/model karışmışsa veya aynı
+            saniyeyi iki pencere hedefliyorsa.
     """
     if session_duration_ms <= 0:
         raise ValueError("session_duration_ms pozitif olmalı")
