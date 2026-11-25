@@ -67,4 +67,19 @@ store = FeatureStore()  # local_data/derived_features
 records = store.read("<feature_version>", "P01_SCENARIO")
 ```
 
+### 2. Build 2-second windows
+```python
+from visual_attention.storage import FeatureStore
+from visual_attention.windowing import build_windows
+
+store = FeatureStore()
+records = store.read("<feature_version>", "P01_SCENARIO")
+meta = store.read_meta("<feature_version>", "P01_SCENARIO")
+windows = build_windows(records, session_duration_ms=1_200_000, nominal_fps=meta["nominal_fps"])
+```
+
+- Windows are `[t, t+2000)` with a 1 s step; only windows that fit in the session are built.
+- Each `WindowRecord` has mean/std/delta of the numeric features, `face_detected_ratio`, `phone_visible_ratio`, `hand_detected_ratio`, frame count and coverage. Empty windows are invalid (`EMPTY`).
+- Pass `label_intervals=` (human ELAN intervals) to fill `train_label` with the protocol rule (labeling-protocol.md §5.3). Missing evidence is never counted as `MATERYAL`.
+
 Do not commit `.venv/`, real participant data or secrets.
