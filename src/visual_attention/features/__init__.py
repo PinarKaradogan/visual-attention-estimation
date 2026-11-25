@@ -1,5 +1,10 @@
 """Kareden öznitelik çıkarımı: yüz/baş pozu (P4-02), telefon (P4-04), el/bilek (P4-03)."""
 
+from visual_attention.features.extractor import (
+    EXTRACTOR_VERSION,
+    FeatureExtractor,
+    build_feature_version,
+)
 from visual_attention.features.face import (
     FACE_FEATURE_VERSION,
     LEFT_EYE,
@@ -29,6 +34,7 @@ from visual_attention.features.phone import (
 )
 
 __all__ = [
+    "EXTRACTOR_VERSION",
     "FACE_FEATURE_VERSION",
     "HAND_FEATURE_VERSION",
     "LEFT_EYE",
@@ -38,12 +44,14 @@ __all__ = [
     "RIGHT_EYE",
     "FaceFeatureExtractor",
     "FaceFeatures",
+    "FeatureExtractor",
     "HandFeatureExtractor",
     "HandFeatures",
     "HeadPose",
     "PhoneFeatureExtractor",
     "PhoneFeatures",
     "assign_person_sides",
+    "build_feature_version",
     "eye_aspect_ratio",
     "features_from_detections",
     "features_from_hands",
