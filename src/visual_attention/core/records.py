@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from types import MappingProxyType
 
 from visual_attention.core.constants import SECOND_MS
 from visual_attention.core.labels import MODEL_OUTPUTS, Label
@@ -130,6 +131,7 @@ class WindowRecord:
 
     `aggregates` anahtarları: sayısal alanlar için `<alan>_mean`, `<alan>_std`,
     `<alan>_delta`; boolean alanlar için `<alan>_ratio`. Geçerli değer yoksa `None`.
+    `aggregates` salt okunurdur ve kaydın hash değerine katılmaz. Boş pencere geçerli olamaz.
     """
 
     session_id: str
@@ -139,7 +141,7 @@ class WindowRecord:
     feature_version: str
     available_frame_count: int
     is_valid: bool
-    aggregates: Mapping[str, float | None] = field(default_factory=dict)
+    aggregates: Mapping[str, float | None] = field(default_factory=dict, hash=False)
     face_detected_ratio: float | None = None
     coverage_ratio: float | None = None
     invalid_reason: str | None = None
@@ -158,6 +160,9 @@ class WindowRecord:
         check_unit(self.coverage_ratio, "coverage_ratio")
         if not self.is_valid and not self.invalid_reason:
             raise ValueError("Geçersiz pencerede invalid_reason yazılmalı")
+        if self.is_valid and self.available_frame_count == 0:
+            raise ValueError("Boş pencere geçerli olamaz")
+        object.__setattr__(self, "aggregates", MappingProxyType(dict(self.aggregates)))
 
 
 # ---------------------------------------------------------------------------
