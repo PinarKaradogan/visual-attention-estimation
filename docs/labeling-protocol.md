@@ -1,7 +1,7 @@
-# Faz 2.4 — Etiketleme Protokolü ve Karar Kuralları (Taslak v0.1)
+# Faz 2.4 — Etiketleme Protokolü ve Karar Kuralları (Taslak v0.2)
 
 **Proje:** Masa Başında Kâğıt Tabanlı Çalışmada Görsel Dikkat Durumunun ve Odak Süresinin Bilgisayarlı Görü ile Kestirimi  
-**Durum:** Ekip incelemesine açık taslak. Kurallar onaylandığında `protocol_version` ile kilitlenir ve **sonuçlar görüldükten sonra değiştirilmez.**  
+**Durum:** Taslak v0.2; açık kararlar ekipçe kapatıldı, Pınar'ın incelemesine açık. Kurallar onaylandığında `protocol_version` ile kilitlenir ve **sonuçlar görüldükten sonra değiştirilmez.**  
 **Dayanak:** TÜBİTAK 2209-A başvurusu, son hali (v5): 2.2, 2.3, 2.4, 2.5, 2.7, Ek-1, Ek-2; `docs/architecture.md` 4.1–4.2; `docs/data-schema.md` 3.5–3.6.  
 **Önemli:** Bu belge etik izin değildir. Etik kurul izin belgesi alınmadan hiçbir gönüllüden görüntü kaydedilmez ve etiketlenmez.
 
@@ -15,14 +15,17 @@ Bu protokol, kayıtlı araştırma videolarında insan referans etiketlerinin na
 - Masada yokluk ve yorgunluk kapsam dışıdır.
 - Etiketler gözlenebilir davranışı tanımlar. Bilişsel dikkat veya öğrenme kazanımı ölçüsü olarak yorumlanmaz.
 
-## 2. Roller ve erişim (v5, 2.3 ve 2.8)
+## 2. Roller ve erişim
 
 | Konu | Kural |
 | --- | --- |
-| Etiketleyici | Proje yürütücüsü (tek etiketleyici). Etiketleme model çıktıları görülmeden yapılır. |
-| Video erişimi | Yalnız proje yürütücüsü ve akademik danışman. Şifreli harici depolama. |
+| Etiketleyiciler | Pınar ve Bahar. Videolar ikisi arasında bölünür. Etiketleme model çıktıları görülmeden yapılır. |
+| Kayıt | Her etiket dosyası `annotator_id` (etiketleyici kodu) ve `label_round` ile kaydedilir; kimin hangi videoyu etiketlediği izlenebilir. |
+| Video erişimi | v5 (2.8) erişimi proje yürütücüsü ve akademik danışmanla sınırlar. **Bahar'ın videolara erişimi, etik kurula yapılacak değişiklik bildiriminin onayına bağlıdır.** Onay gelene kadar Bahar video görmez ve etiketlemez; videolar şifreli harici depolamada kalır. |
 | Diğer geliştirme | Videolara erişmeden sentetik veya açık lisanslı, kişisel veri içermeyen girdilerle yapılır. |
 | Bulut / üçüncü taraf | Video ve etiket dosyaları hiçbir bulut hizmetine, API'ye veya GitHub'a gönderilmez. |
+
+> **v5 ile fark:** v5'te etiketlemeyi tek başına proje yürütücüsü yapar (2.3). İki etiketleyicili düzen, etik değişiklik onayı alındığında uygulanır. Onay alınamazsa etiketlemenin tamamını Pınar yapar; bölüm 7'deki kurallar değişmez.
 
 ## 3. Etiketleme aracı: ELAN
 
@@ -30,7 +33,7 @@ Bu protokol, kayıtlı araştırma videolarında insan referans etiketlerinin na
 - **Katman (tier):** Her video için tek bir `davranis` katmanı. Değerler kontrollü sözlükten seçilir: `MATERYAL`, `TELEFON`, `DIS_YON`, `BELIRSIZ`. Serbest metin değer girilmez.
 - **Not katmanı:** `not` katmanı yalnız belirsiz kesitlerin gerekçesi için kullanılır (ör. `yuz_ortulu`, `kadraj_disi`, `telefon_etkilesimi_belirsiz`). Kişiyi tanımlayan bilgi yazılmaz.
 - **Etiketlenmemiş boşluk:** Hiçbir aralığa düşmeyen süre `UNLABELED` sayılır. Kayıt sonu dahil hiçbir boşluk otomatik `MATERYAL` sayılmaz.
-- **Dışa aktarma:** Sekme ayrımlı metin; sütunlar `start_ms`, `end_ms`, `label`. Dosya adı yalnız sahte kod ve tur içerir: `P03_SCENARIO_r1.tsv`.
+- **Dışa aktarma:** Sekme ayrımlı metin; sütunlar `start_ms`, `end_ms`, `label`. Dosya adı yalnız sahte kod, oturum, tur ve etiketleyici kodu içerir: `P03_SCENARIO_r1_A1.tsv`. Etiketleyici kodları (`A1`, `A2`) ile kişiler arasındaki eşleme yalnız ekipte tutulur.
 - **Saklama:** `.eaf` proje dosyaları ve dışa aktarımlar `local_data/labels/` altında durur (Git tarafından yok sayılır). `.eaf` dosyası video yolunu içerdiğinden paylaşılmaz.
 
 ## 4. Sınıf tanımları ve karar kuralları (v5 Ek-2'nin ayrıntılı hali)
@@ -47,9 +50,9 @@ Bu protokol, kayıtlı araştırma videolarında insan referans etiketlerinin na
 ### 4.2 Öncelik ve özel durumlar
 
 1. **Telefon görünüyor ama etkileşim belli değil:** Görülen davranış etiketlenir (ör. kişi kâğıda bakıyorsa `MATERYAL`). Davranış da görülemiyorsa `BELIRSIZ`.
-2. **Telefon elde, bakış başka yöne:** Bakış ve baş belirgin biçimde materyal dışındaysa ve telefonla etkileşim yoksa `DIS_YON`. *(Açık karar, bkz. 11.)*
+2. **Telefon elde, bakış başka yöne:** Bakış ve baş belirgin biçimde materyal dışındaysa ve telefonla etkileşim yoksa `DIS_YON`.
 3. **Telefon ile dışa bakış art arda:** Ayrı aralıklar olarak etiketlenir. Birleştirilmez.
-4. **Kısa dışa bakışlar:** Süresine bakılmaksızın, açıkça görülen her `DIS_YON` aralığı etiketlenir. 3 saniyelik kesinti eşiği etiketlemede değil, hesaplamada (bölüm 6) uygulanır. Böylece 2 ve 5 sn duyarlılık analizi aynı etiketlerle yapılabilir. Etiketlenecek en kısa aralık için öneri: 0,5 sn. *(Açık karar, bkz. 11.)*
+4. **Kısa dışa bakışlar:** Süresine bakılmaksızın, açıkça görülen her `DIS_YON` aralığı etiketlenir. 3 saniyelik kesinti eşiği etiketlemede değil, hesaplamada (bölüm 6) uygulanır. Böylece 2 ve 5 sn duyarlılık analizi aynı etiketlerle yapılabilir. Etiketlenecek en kısa aralık **0,5 sn**'dir; daha kısa davranışlar çevresindeki aralığın etiketini alır.
 5. **Sınırlar:** Davranışın başlangıç ve bitişi senaryo komut zamanından değil, **görsel incelemeyle** belirlenir (v5, 2.2). Başlangıç, yeni davranışın açıkça görüldüğü ilk karedir. Bitiş, sonraki davranışın açıkça görüldüğü ilk karedir. ELAN'da kare kare ilerleme kullanılır.
 
 ## 5. Zaman çözünürlükleri ve türetilmiş etiketler
@@ -93,17 +96,24 @@ v5 2.7, kesintiyi "MATERYAL dışındaki gözlenebilir davranışın kesintisiz 
 5. **Eşik:** 3 sn önceden sabittir. 2 ve 5 sn yalnız duyarlılık analizinde kullanılır.
 6. **Olay eşleştirme (kesinti olayı F1):** Modelin bulduğu kesinti, referanstaki bir kesintiyle **aynı sınıftaysa** ve **başlangıçları arasındaki fark ±2 sn içindeyse** doğru sayılır. Eşleştirme bire birdir: her referans olayı en fazla bir model olayıyla eşleşir. Birden fazla aday varsa başlangıç farkı en küçük olan seçilir.
 7. **Odak süresi:** 1 saniyelik zaman çizelgesindeki `MATERYAL` saniyelerinin toplamı. Pencere süreleri toplanmaz.
+8. **Odak oranı:** Odak süresi / geçerli oturum süresi. Geçerli süre, `BELIRSIZ` ve `GECIS` saniyeleri çıkarılmış süredir; bu saniyeler paydaya girmez ve ayrıca raporlanır.
 
 ## 7. Etiketleme güvenirliği: test–tekrar test (v5, 2.3)
 
-1. **Alt küme:** Videonun **en az %25'i**, tüm katılımcıları ve üç sınıfı temsil edecek biçimde **tabakalı rastgele** seçilir. Seçim için kullanılan rastgele tohum ve seçilen oturumlar kayıt altına alınır.
-2. **Süre:** İkinci etiketleme, ilk etiketlemeden **en az 4 hafta (28 gün)** sonra yapılır. Bu süre teslim tarihine göre kısaltılmaz; gerekirse tekrar etiketleme teslimden sonra yapılır ve sonuçları sonradan eklenir.
-3. **Körleme:** İlk etiketler ve model çıktıları ikinci tur boyunca görülmez. İlk tur dosyaları ayrı klasöre taşınır, ikinci turdaki video sırası karıştırılır.
-4. **Ölçüm:** 1 saniyelik çözünürlükte genel ve sınıf bazlı Cohen κ, yüzde uyum ve olay düzeyi uyum (±1 sn). Hedef: genel κ ≥ 0,70, sınıf bazlı κ ≥ 0,60.
-5. **Uyuşmazlık:** İki tur arasındaki farklar karar kılavuzu esas alınarak yeniden incelenir. Kılavuzla çözülemeyen kesitler nihai referanstan çıkarılır ve gerekçesiyle listelenir.
-6. **Sürümler:** İlk etiketler (`r1`), tekrar etiketleri (`r2`) ve nihai referans etiketler (`final`) ayrı sürümler olarak saklanır.
-7. **Hedef altında kalırsa:** Kılavuz güncellenir, ilgili kesitler yeniden işaretlenir; ilk ve düzeltilmiş uyum birlikte raporlanır.
-8. **Sınırlılık:** Bu tasarım etiketlerin **zamansal tutarlılığını** ölçer, etiketleyiciler arası uyumu ölçmez. Sonuçlar bu sınırlılıkla raporlanır.
+1. **Alt küme (tekrar seti):** Tabakalama katılımcı × oturum düzeyindedir. **Her katılımcının her oturumundan**, oturum süresinin %25'i kadar **kesintisiz bir kesit** seçilir: senaryolu oturumda 5 dk, serbest oturumda 2,5 dk. Böylece toplam videonun %25'i tekrar edilir ve tüm katılımcılar temsil edilir.
+   - **Başlangıç:** Kesitin başlangıcı sabit tohumla rastgele seçilir. **Tohum: `2209`.** Başlangıç, kesit oturum içinde kalacak biçimde `[0, oturum_süresi − kesit_süresi]` aralığından çekilir.
+   - **Sınıf temsili:** Kesitte ilk etiketlere göre `TELEFON` **veya** `DIS_YON` yoksa kesit 30 sn'lik adımlarla ileri kaydırılır; oturum sonuna gelince başa dönülür. İki sınıfın da bulunduğu ilk konum kullanılır.
+   - **Bulunamazsa:** Oturumda iki sınıftan biri hiç yoksa (ör. serbest oturumda telefon kullanılmadıysa) kesit ilk rastgele başlangıçta bırakılır ve bu durum not edilir.
+   - Seçilen kesitler (oturum, başlangıç, bitiş, kaydırma sayısı) kayıt altına alınır. Tekrar setindeki videolar ilk etiketlemede önce etiketlenir; böylece 4 haftalık süre en erken dolar.
+2. **Etiketleyici:** Bir videoyu ilk kim etiketlediyse tekrarını da o yapar (etiketleyici-içi test–tekrar test).
+3. **Ortak deneme (zorunlu):** Etiketlemeye başlamadan önce iki etiketleyici aynı kısa videoyu ayrı ayrı etiketler. Farklar karar kılavuzuna göre konuşulur, gerekirse kılavuz güncellenir. Bu deneme izin öncesi yalnız açık lisanslı veya sentetik videoyla yapılır ve araştırma verisine katılmaz.
+4. **Süre:** İkinci etiketleme, ilk etiketlemeden **en az 4 hafta (28 gün)** sonra yapılır. Bu süre teslim tarihine göre kısaltılmaz; gerekirse tekrar etiketleme teslimden sonra yapılır ve sonuçları sonradan eklenir.
+5. **Körleme:** İlk etiketler ve model çıktıları ikinci tur boyunca görülmez. İlk tur dosyaları ayrı klasöre taşınır, ikinci turdaki video sırası karıştırılır.
+6. **Ölçüm:** 1 saniyelik çözünürlükte genel ve sınıf bazlı Cohen κ, yüzde uyum ve olay düzeyi uyum (±1 sn). Hedef: genel κ ≥ 0,70, sınıf bazlı κ ≥ 0,60.
+7. **Uyuşmazlık:** İki tur arasındaki farklar karar kılavuzu esas alınarak yeniden incelenir. Kılavuzla çözülemeyen kesitler nihai referanstan çıkarılır ve gerekçesiyle listelenir.
+8. **Sürümler:** İlk etiketler (`r1`), tekrar etiketleri (`r2`) ve nihai referans etiketler (`final`) ayrı sürümler olarak saklanır.
+9. **Hedef altında kalırsa:** Kılavuz güncellenir, ilgili kesitler yeniden işaretlenir; ilk ve düzeltilmiş uyum birlikte raporlanır.
+10. **Sınırlılık:** Bu tasarım etiketlerin **zamansal tutarlılığını** ölçer, etiketleyiciler arası uyumu ölçmez. Sonuçlar bu sınırlılıkla raporlanır.
 
 ## 8. Kılavuz sürümleri ve pilot
 
@@ -127,28 +137,32 @@ v5 2.7, kesintiyi "MATERYAL dışındaki gözlenebilir davranışın kesintisiz 
 
 | Şema kaydı | Bu protokoldeki karşılığı | `data-schema.md` için gereken değişiklik |
 | --- | --- | --- |
-| `HumanLabelInterval` | 5.1 | `annotator_id` yerine (tek etiketleyici) `label_round` (`r1` / `r2` / `final`) |
+| `HumanLabelInterval` | 5.1 | `annotator_id` (etiketleyici kodu) kalır; yanına `label_round` (`r1` / `r2` / `final`) eklenir |
 | `SecondReference` | 5.2 | İnsan etiketindeki `BELIRSIZ`, şemadaki `UNCERTAIN` durumuna karşılık gelir; `GECIS` değeri eklenmeli; `agreement_status` alanı test–tekrar test karşılaştırmasını göstermeli |
 | Pencere etiketi | 5.3 | `WindowRecord` için `train_label` (`MATERYAL` / `TELEFON` / `DIS_YON` / `GECIS` / `UNUSED`) |
 | Kesinti olayı | 6 | `InterruptionEvent(session_id, label, start_ms, end_ms, source)` |
 
 Bu değişiklikler ayrı bir PR'da `data-schema.md` üzerinde yapılır.
 
-## 11. Açık kararlar (ekip onayı bekliyor)
+## 11. Ekipçe kapatılan kararlar
 
-- [ ] Etiketlenecek en kısa aralık: öneri 0,5 sn (4.2 madde 4).
-- [ ] Telefon elde ama bakış başka yöndeyken `DIS_YON` mu, `BELIRSIZ` mı (4.2 madde 2).
-- [ ] 1 saniyelik referansta 500/500 eşitliğin `GECIS` sayılması (5.2).
-- [ ] Test–tekrar test alt kümesinin seçim tohumu ve tabakalama ölçütü (7.1).
+- [x] Etiketlenecek en kısa aralık: **0,5 sn** (4.2 madde 4).
+- [x] Telefon elde ama bakış başka yöndeyse: **`DIS_YON`** (4.2 madde 2).
+- [x] 1 saniyelik referansta 500/500 eşitlik: **`GECIS`** (5.2).
+- [x] Tekrar seti: her katılımcının her oturumundan, tohum `2209` ile rastgele başlangıçlı, sürenin %25'i kadar kesintisiz kesit; `TELEFON` veya `DIS_YON` yoksa kesit kaydırılır (7.1).
+- [x] `GECIS` saniyeleri, `BELIRSIZ` gibi odak oranının paydasına girmez (6.8).
+- [x] Etiketlemeyi iki kişi yapar; tekrarı ilk etiketleyen yapar; etiketleme öncesi ortak deneme zorunludur (2, 7.2, 7.3).
 
 ## 12. Otomatik testler (sentetik veriyle, Issue #17 ile uyumlu)
 
 - 5.2 ve 5.3: Sınırdaki aralıklar (ör. 999/1001 ms, 1000/1000 eşitlik, yarı belirsiz pencere) doğru etiketleniyor.
 - 6: 3 sn aynı sınıf kesinti sayılıyor; 2 sn `TELEFON` + 2 sn `DIS_YON` sayılmıyor; araya giren `BELIRSIZ` kesintiyi bölüyor; 2,9 / 3,0 / 3,1 sn sınırları.
 - 6.6: ±2 sn içinde ve aynı sınıftaki olay eşleşiyor, farklı sınıf eşleşmiyor; bir referans olayı iki kez eşleşmiyor.
-- 6.7: Odak süresi oturum süresini aşmıyor; örtüşen pencereler iki kez sayılmıyor.
-- 7: Aynı etiket dizisinde κ = 1; ilk ve tekrar etiket dosyaları birbirine karışmıyor.
+- 6.7–6.8: Odak süresi oturum süresini aşmıyor; örtüşen pencereler iki kez sayılmıyor; `BELIRSIZ` ve `GECIS` saniyeleri odak oranının paydasına girmiyor.
+- 7: Aynı etiket dizisinde κ = 1; ilk ve tekrar etiket dosyaları birbirine karışmıyor; tekrar etiketi ilk etiketleyiciyle aynı `annotator_id`'yi taşıyor.
+- 7.1: Aynı tohumla tekrar seti seçimi her çalıştırmada aynı sonucu veriyor; kesit oturum sınırını aşmıyor; `TELEFON`/`DIS_YON` yoksa kaydırma ve başa dönme doğru çalışıyor; sınıf hiç yoksa ilk başlangıç korunuyor.
 
 ## Revizyon kaydı
 
 - **v0.1 (25 Kasım 2026):** TÜBİTAK başvurusunun son hali (v5) ve ekip yöntem kararlarına göre ilk taslak. Pencere etiketi, BELİRSİZ, kesinti ve test–tekrar test kuralları yazıldı.
+- **v0.2 (25 Kasım 2026, #19):** İki etiketleyicili düzen (Bahar'ın video erişimi etik değişiklik onayına bağlı), tekrarı ilk etiketleyenin yapması, zorunlu ortak deneme, tekrar seti seçim kuralı (tohum `2209`), `GECIS`'in odak oranı paydasından çıkarılması, `annotator_id` + `label_round`; açık kararlar kapatıldı.
