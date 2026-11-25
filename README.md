@@ -43,4 +43,28 @@ Invoke-WebRequest https://storage.googleapis.com/mediapipe-models/hand_landmarke
 
 Tests that need a model file are skipped when it is missing (as in CI).
 
+## Pipeline usage
+
+### 1. Extract features from a recorded video
+Research sessions are recorded to a file first and processed in FILE mode (video time comes from the file, not the wall clock). Real participant videos are processed only after the ethics approval; no frames are ever written.
+
+```powershell
+$env:PYTHONPATH = "src"   # run from the repository root
+.\.venv\Scripts\python.exe -m visual_attention.features --video local_data/raw_video/P01_SCENARIO.mp4 --session-id P01_SCENARIO
+```
+
+- Needs the three model files above in `models/` (`--models` to change).
+- `--no-phone` / `--no-hand` turn a component off (its status becomes `NOT_EVALUATED`); the face component is always on.
+- Output (ignored by Git): `local_data/derived_features/<feature_version>/<session_id>.csv` with one `FeatureRecord` per processed frame, and `<session_id>.meta.json` with source information (resolution, FPS, dropped/skipped frames, processing FPS).
+- An existing file is not overwritten unless `--overwrite` is given.
+
+Reading the stored features in Python:
+
+```python
+from visual_attention.storage import FeatureStore
+
+store = FeatureStore()  # local_data/derived_features
+records = store.read("<feature_version>", "P01_SCENARIO")
+```
+
 Do not commit `.venv/`, real participant data or secrets.
