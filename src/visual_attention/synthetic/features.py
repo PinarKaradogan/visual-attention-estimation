@@ -7,6 +7,14 @@ değerlerden türetilmez (data-schema.md, LOSO değişmezi: eşikler yalnız eğ
 kişileriyle belirlenir).
 
 İşaret yönleri data-schema.md §3.3 ile aynıdır: pitch > 0 baş aşağı, yaw > 0 kişinin sağı.
+
+Alanların biçimi gerçek modüllerle aynıdır (features/face.py, phone.py, hand.py):
+- Yüz: VALID veya NOT_DETECTED; LOW_CONFIDENCE/OCCLUDED üretilmez.
+- Telefon: işlenen her karede `phone_score` sayıdır; aday yoksa 0.0 ve kutu None. Düşük
+  puanlı adayın kutusu da tutulur. `phone_status` puan ≥ DEFAULT_VISIBLE_THRESHOLD ise
+  VISIBLE, değilse NOT_VISIBLE; OCCLUDED üretilmez. Kutu sol üst köşe + genişlik/yükseklik.
+- El: el yoksa NOT_DETECTED, el sayısı 0 ve bilekler None. Telefona uzaklık, kutu varsa
+  (puanı düşük olsa da) piksel cinsinden hesaplanıp görüntü köşegenine bölünür.
 """
 
 from __future__ import annotations
@@ -18,6 +26,7 @@ from dataclasses import dataclass
 from visual_attention.core.labels import Label
 from visual_attention.core.records import FeatureRecord, ValidityFlags
 from visual_attention.core.status import FaceStatus, HandStatus, PhoneStatus
+from visual_attention.features.phone import DEFAULT_VISIBLE_THRESHOLD
 from visual_attention.synthetic.behavior import BehaviorSegment, label_at
 
 SYNTHETIC_FEATURE_VERSION = "syn-0.1.0"
@@ -34,7 +43,6 @@ class ClassProfile:
     ear: tuple[float, float]
     wrist_xy: tuple[float, float]
     wrist_motion: float  # yazma hareketinin genliği (normalize)
-    phone_visible_p: float
     phone_score: tuple[float, float]
     hand_on_phone: bool
 
@@ -47,7 +55,6 @@ CLASS_PROFILES: dict[Label, ClassProfile] = {
         ear=(0.22, 0.03),
         wrist_xy=(0.55, 0.80),
         wrist_motion=0.02,
-        phone_visible_p=0.0,
         phone_score=(0.0, 0.0),
         hand_on_phone=False,
     ),
@@ -57,7 +64,6 @@ CLASS_PROFILES: dict[Label, ClassProfile] = {
         ear=(0.24, 0.03),
         wrist_xy=(0.50, 0.65),
         wrist_motion=0.005,
-        phone_visible_p=0.8,
         phone_score=(0.75, 0.10),
         hand_on_phone=True,
     ),
@@ -67,7 +73,6 @@ CLASS_PROFILES: dict[Label, ClassProfile] = {
         ear=(0.30, 0.03),
         wrist_xy=(0.55, 0.82),
         wrist_motion=0.003,
-        phone_visible_p=0.0,
         phone_score=(0.0, 0.0),
         hand_on_phone=False,
     ),
@@ -106,8 +111,10 @@ class FeatureStreamConfig:
     frame_drop_p: float = 0.01
     face_dropouts: int = 3
     face_dropout_range_ms: tuple[int, int] = (1000, 4000)
-    low_confidence_p: float = 0.02
+    hand_missing_p: float = 0.03
     phone_false_positive_p: float = 0.05
+    phone_weak_in_hand_p: float = 0.2  # telefon elde ama el kapattığı için puan düşük
+    frame_size_px: tuple[int, int] = (1280, 720)  # C310, 720p
 
 
 def _clip01(x: float) -> float:
@@ -205,15 +212,11 @@ def _make_record(
     face_lost: bool,
 ) -> FeatureRecord:
     cp = CLASS_PROFILES[label]
+    width, height = cfg.frame_size_px
 
-    # Yüz ve baş pozu
-    if face_lost:
-        face_status = FaceStatus.NOT_DETECTED
-    elif rng.random() < cfg.low_confidence_p:
-        face_status = FaceStatus.LOW_CONFIDENCE
-    else:
-        face_status = FaceStatus.VALID
-    face_ok = face_status is FaceStatus.VALID
+    # Yüz ve baş pozu (face.py: VALID veya NOT_DETECTED)
+    face_ok = not face_lost
+    face_status = FaceStatus.VALID if face_ok else FaceStatus.NOT_DETECTED
     pitch = rng.gauss(*cp.pitch_deg) + profile.pitch_offset_deg if face_ok else None
     yaw = rng.gauss(*cp.yaw_deg) + profile.yaw_offset_deg if face_ok else None
     roll = rng.gauss(0.0, 3.0) + profile.roll_offset_deg if face_ok else None
@@ -222,6 +225,7 @@ def _make_record(
     ear_r = max(rng.gauss(ear_mean, cp.ear[1]), 0.0) if face_ok else None
 
     # El / bilek (yazma hareketi: küçük periyodik salınım)
+    hand_ok = rng.random() >= cfg.hand_missing_p
     phase = 2 * math.pi * t / 700.0
     rx = _clip01(
         cp.wrist_xy[0]
@@ -233,28 +237,39 @@ def _make_record(
     lx = _clip01(rx - 0.15 + rng.gauss(0, 0.005))
     ly = _clip01(ry + 0.02 + rng.gauss(0, 0.005))
 
-    # Telefon
-    false_positive = (not cp.hand_on_phone) and rng.random() < cfg.phone_false_positive_p
-    visible = rng.random() < cp.phone_visible_p or false_positive
-    if visible:
-        phone_status = PhoneStatus.VISIBLE
-        if false_positive:
-            score = rng.uniform(0.3, 0.5)
-            cx, cy = rng.uniform(0.1, 0.9), rng.uniform(0.6, 0.95)
+    # Telefon (phone.py): aday yoksa puan 0.0 ve kutu yok
+    if cp.hand_on_phone:
+        if rng.random() < cfg.phone_weak_in_hand_p:
+            score = rng.uniform(0.1, DEFAULT_VISIBLE_THRESHOLD)
         else:
-            score = _clip01(rng.gauss(*cp.phone_score))
-            cx, cy = rx + rng.gauss(0, 0.01), ry - 0.05 + rng.gauss(0, 0.01)
-        # Kutu, features/phone.py ile aynı biçimde: sol üst köşe (x, y) + genişlik/yükseklik.
-        bw, bh = PHONE_BOX_W, PHONE_BOX_H
-        box = (_clip01(cx - bw / 2), _clip01(cy - bh / 2))
-        dist = math.hypot(cx - rx, cy - ry) / math.sqrt(2)
-        overlap = box[0] <= rx <= box[0] + bw and box[1] <= ry <= box[1] + bh
-    elif cp.hand_on_phone:
-        phone_status = PhoneStatus.OCCLUDED  # telefon elin arkasında kaldı
-        score = box = dist = overlap = None
+            score = max(_clip01(rng.gauss(*cp.phone_score)), DEFAULT_VISIBLE_THRESHOLD)
+        cx, cy = rx + rng.gauss(0, 0.01), ry - 0.05 + rng.gauss(0, 0.01)
+    elif rng.random() < cfg.phone_false_positive_p:
+        score = rng.uniform(0.1, 0.5)
+        cx, cy = rng.uniform(0.1, 0.9), rng.uniform(0.6, 0.95)
     else:
-        phone_status = PhoneStatus.NOT_VISIBLE
-        score = box = dist = overlap = None
+        score, cx, cy = 0.0, None, None
+
+    box: tuple[float, float] | None = None
+    if cx is not None:
+        # Kutu, features/phone.py ile aynı biçimde: sol üst köşe (x, y) + genişlik/yükseklik.
+        box = (_clip01(cx - PHONE_BOX_W / 2), _clip01(cy - PHONE_BOX_H / 2))
+    phone_status = (
+        PhoneStatus.VISIBLE if score >= DEFAULT_VISIBLE_THRESHOLD else PhoneStatus.NOT_VISIBLE
+    )
+
+    # El–telefon ilişkisi (hand.py): el ve kutu varsa, puan düşük olsa da hesaplanır
+    dist: float | None = None
+    overlap: bool | None = None
+    if hand_ok and box is not None:
+        bcx, bcy = box[0] + PHONE_BOX_W / 2, box[1] + PHONE_BOX_H / 2
+        wrists = ((rx, ry), (lx, ly))
+        dist = min(math.hypot((x - bcx) * width, (y - bcy) * height) for x, y in wrists)
+        dist /= math.hypot(width, height)
+        overlap = any(
+            box[0] <= x <= box[0] + PHONE_BOX_W and box[1] <= y <= box[1] + PHONE_BOX_H
+            for x, y in wrists
+        )
 
     return FeatureRecord(
         session_id=session_id,
@@ -262,24 +277,24 @@ def _make_record(
         timestamp_ms=t,
         feature_version=SYNTHETIC_FEATURE_VERSION,
         face_status=face_status,
-        hand_status=HandStatus.VALID,
+        hand_status=HandStatus.VALID if hand_ok else HandStatus.NOT_DETECTED,
         phone_status=phone_status,
         validity_flags=ValidityFlags(
             head_pose_valid=face_ok,
             eye_features_valid=face_ok,
-            hand_features_valid=True,
-            phone_features_valid=visible,
+            hand_features_valid=hand_ok,
+            phone_features_valid=True,  # telefon bileşeni her karede çalıştı
         ),
         head_yaw_deg=yaw,
         head_pitch_deg=pitch,
         head_roll_deg=roll,
         eye_aspect_ratio_left=ear_l,
         eye_aspect_ratio_right=ear_r,
-        hand_count=2,
-        left_wrist_x=lx,
-        left_wrist_y=ly,
-        right_wrist_x=rx,
-        right_wrist_y=ry,
+        hand_count=2 if hand_ok else 0,
+        left_wrist_x=lx if hand_ok else None,
+        left_wrist_y=ly if hand_ok else None,
+        right_wrist_x=rx if hand_ok else None,
+        right_wrist_y=ry if hand_ok else None,
         hand_phone_distance_norm=dist,
         hand_phone_overlap=overlap,
         phone_score=score,
