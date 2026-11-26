@@ -256,6 +256,11 @@ def test_extractor_works_with_fake_video_source():
     assert all(r.face_status is FaceStatus.VALID for r in records)
 
 
+def test_default_searches_a_single_face():
+    """num_faces=2 VIDEO modunda baş eğikken takibi kaybettiriyor (#45); varsayılan 1 kalmalı."""
+    assert FaceFeatureExtractor()._num_faces == 1
+
+
 def test_missing_model_file_raises(tmp_path):
     with pytest.raises(FileNotFoundError):
         FaceFeatureExtractor(tmp_path / "yok.task").open()

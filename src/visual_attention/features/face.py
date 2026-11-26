@@ -17,7 +17,10 @@ noktası ölçülmez.
 
 `face_status`: yüz bulunursa VALID, bulunmazsa NOT_DETECTED. Face Landmarker yüz başına güven
 puanı vermediği için LOW_CONFIDENCE ve OCCLUDED bu sürümde üretilmez (eşik uydurulmaz).
-Karede birden fazla yüz varsa en büyük yüz kullanılır.
+Varsayılan olarak tek yüz aranır (`num_faces=1`): VIDEO modunda `num_faces=2` iken karede tek
+kişi varken baş eğildiğinde takip kayboluyor (örnek videoda yüz %37'ye düştü, #45). Birden
+fazla yüz aranırsa en büyük yüz kullanılır; kadraja ikinci kişinin girmesi kayıt protokolüyle
+önlenir.
 """
 
 from __future__ import annotations
@@ -176,13 +179,14 @@ class FaceFeatureExtractor:
         self,
         model_path: str | Path = DEFAULT_FACE_MODEL,
         *,
-        num_faces: int = 2,
+        num_faces: int = 1,
         landmarker: Any = None,
     ) -> None:
         """
         Args:
             model_path: `face_landmarker.task` dosyası (Git dışında; indirme için README).
-            num_faces: En büyüğü seçilmek üzere aranacak en fazla yüz sayısı.
+            num_faces: Aranacak en fazla yüz sayısı (varsayılan 1, bkz. modül açıklaması);
+                1'den büyükse en büyük yüz seçilir.
             landmarker: Testler için `detect_for_video(image, timestamp_ms)` sağlayan nesne.
         """
         self._model_path = Path(model_path)
