@@ -12,7 +12,7 @@ Kontroller:
     info     Kamera çözünürlüğü ve gerçek FPS
     framing  Kadraj: okuma, yazma, telefon, duvardaki işaret (yüz/el/telefon oranı)
     pose     Baş pozu yönü: aşağı, sağa, sağ omza
-    hands    Kişinin sol/sağ eli ve görüntünün aynalanıp aynalanmadığı
+    hands    Kişinin sol/sağ eli (aynalama kararı pose kontrolündeki yaw/roll işaretinden)
     phone    Elde telefon: yok, masada, elde ekrana bakarken, elde yana bakarken
     fps      60 sn doğal çalışmada üç modelin işlem hızı (GPU kullanılmaz)
 
@@ -215,55 +215,112 @@ def summarize(check: str, results: dict[str, PhaseResult]) -> list[dict]:
     return rows
 
 
-def verdicts(check: str, rows: list[dict], wall_fps: float | None) -> list[str]:
+MIN_FRAMES = 10  # bir adımda bundan az kare sayıldıysa sonuç güvenilmez
+
+
+def _frames_note(row: dict) -> str:
+    n = row.get("n") or 0
+    return f"[{n} kare{', AZ KARE: adim atlanmis/kaymis olabilir' if n < MIN_FRAMES else ''}]"
+
+
+def verdicts(
+    check: str,
+    rows: list[dict],
+    wall_fps: float | None,
+    camera_fps: float | None = None,
+) -> list[str]:
     by = {row["phase"]: row for row in rows}
     out = []
 
     def delta(a, b, col):
         if by.get(a, {}).get(col) is None or by.get(b, {}).get(col) is None:
             return None
-        return by[a][col] - by[b][col]
+        return round(by[a][col] - by[b][col], 1)
 
     if check == "pose":
+        deltas = {}
         for phase, col, need, name in (
             ("asagi", "pitch_median", 10, "asagi -> pitch artar"),
             ("sag", "yaw_median", 10, "kendi sagina -> yaw artar"),
             ("sag_omuz", "roll_median", 5, "sag omza -> roll artar"),
         ):
             d = delta(phase, "duz", col)
+            deltas[col] = (d, need)
             ok = d is not None and d >= need
-            out.append(f"{'OK ' if ok else '?? '} {name}: fark {d}")
-    elif check == "hands":
-        right, left = by.get("sag_el", {}), by.get("sol_el", {})
-        ok_r = (right.get("right_only_pct") or 0) >= 70
-        ok_l = (left.get("left_only_pct") or 0) >= 70
-        out.append(
-            f"{'OK ' if ok_r else '?? '} sag el -> right_wrist: %{right.get('right_only_pct')}"
-        )
-        out.append(f"{'OK ' if ok_l else '?? '} sol el -> left_wrist: %{left.get('left_only_pct')}")
-        x = right.get("right_wrist_x_median")
-        if x is not None:
-            mirrored = "AYNALANMAMIS (beklenen)" if x < 0.5 else "AYNALANMIS olabilir!"
             out.append(
-                f"     goruntu: sag el goruntunun {'solunda' if x < 0.5 else 'saginda'}"
-                f" -> {mirrored}"
+                f"{'OK ' if ok else '?? '} {name}: fark {d} (duz {by.get('duz', {}).get(col)}, "
+                f"{phase} {by.get(phase, {}).get(col)}) {_frames_note(by.get(phase, {}))}"
             )
+        # Aynalama baş pozundan anlaşılır: aynalı görüntüde yaw ve roll işareti birlikte döner.
+        signs = [
+            None if d is None else (1 if d >= need else -1 if d <= -need else 0)
+            for d, need in (deltas["yaw_median"], deltas["roll_median"])
+        ]
+        if signs == [1, 1]:
+            mirror = "AYNALANMAMIS (beklenen; yaw ve roll beklenen yonde)"
+        elif signs == [-1, -1]:
+            mirror = "AYNALANMIS olabilir (yaw ve roll ters) ya da ters yone donuldu"
+        else:
+            mirror = "belirsiz (yaw/roll farki yetersiz), poz kontrolunu tekrarla"
+        out.append(f"     goruntu: {mirror}")
+    elif check == "hands":
+        for phase, col, label in (
+            ("sag_el", "right_only_pct", "yalniz sag"),
+            ("sol_el", "left_only_pct", "yalniz sol"),
+            ("iki_el", "two_hands_pct", "iki el"),
+        ):
+            row = by.get(phase, {})
+            ok = (row.get(col) or 0) >= 70
+            out.append(
+                f"{'OK ' if ok else '?? '} {phase}: {label} %{row.get(col)} | el bulundu "
+                f"%{row.get('hand_pct')}, yalniz sag %{row.get('right_only_pct')}, "
+                f"yalniz sol %{row.get('left_only_pct')}, iki el %{row.get('two_hands_pct')} "
+                f"{_frames_note(row)}"
+            )
+        right, left = by.get("sag_el", {}), by.get("sol_el", {})
+        if (right.get("left_only_pct") or 0) >= 50 and (left.get("right_only_pct") or 0) >= 50:
+            out.append("     !! eller TERS tarafa yaziliyor: POSE'daki 'goruntu' satirina bak")
+        elif (right.get("hand_pct") or 0) < 50 or (left.get("hand_pct") or 0) < 50:
+            out.append("     !! el az bulunuyor: isik, elin kadrajda olmasi, hareket bulanikligi")
     elif check == "framing":
         for row in rows:
             ok = (row["face_pct"] or 0) >= 90
             out.append(
                 f"{'OK ' if ok else '!! '} {row['phase']}: yuz %{row['face_pct']}"
-                " (H5 hedefi >= %90)"
+                f" (H5 hedefi >= %90), el %{row['hand_pct']}, "
+                f"telefon gorulme %{row['phone_visible_pct']}, "
+                f"pitch ortanca {row['pitch_median']} {_frames_note(row)}"
             )
     elif check == "phone":
         for row in rows:
             out.append(
                 f"     {row['phase']}: gorulme %{row['phone_visible_pct']}, "
-                f"ortanca puan {row['phone_score_median']}, en yuksek {row['phone_score_max']}"
+                f"ortanca puan {row['phone_score_median']}, en yuksek {row['phone_score_max']}, "
+                f"el %{row['hand_pct']} {_frames_note(row)}"
+            )
+        if any(by.get(p, {}).get("phone_score_max") == 0 for p in ("elde_ekran", "elde_yan")):
+            out.append(
+                "     ?? elde adiminda hic aday yok (puan 0): adimlar kaymis olabilir"
+                " ya da telefon kadraj disinda"
             )
     elif check == "fps":
-        ok = wall_fps is not None and wall_fps >= 10
-        out.append(f"{'OK ' if ok else '!! '} islem hizi {wall_fps} FPS (H5 hedefi >= 10, GPU'suz)")
+        row = rows[0] if rows else {}
+        ms = row.get("extract_ms_median")
+        capacity = round(1000 / ms, 1) if ms else None
+        ok = capacity is not None and capacity >= 10
+        out.append(
+            f"{'OK ' if ok else '!! '} islem kapasitesi ~{capacity} FPS "
+            f"(kare basi ortanca {ms} ms, p95 {row.get('extract_ms_p95')} ms; H5 hedefi >= 10,"
+            " GPU'suz)"
+        )
+        out.append(f"     kamera hizi {camera_fps} FPS, islenen kare hizi {wall_fps} FPS")
+        if camera_fps is not None and camera_fps < 15:
+            out.append("     !! kamera yavas: C310 los isikta kare hizini dusurur, isigi artir")
+        if not ok:
+            out.append(
+                "     !! sarj aleti takili mi, Windows guc modu 'En iyi performans' mi?"
+                " Diger uygulamalari kapatip tekrar olc"
+            )
     return out
 
 
@@ -341,6 +398,8 @@ def main(argv: list[str] | None = None) -> int:
         extractor = _fake_extractor() if args.dry_run else FeatureExtractor.from_models(args.models)
         with make_source(args) as source, extractor:
             results = run_phases(source, extractor, title, phases, show=not args.dry_run)
+            camera_fps = source.stats.measured_fps
+        camera_fps = round(camera_fps, 1) if camera_fps else None
         if results is None:
             report.append(f"{check.upper()}: atlandi")
             continue
@@ -350,12 +409,7 @@ def main(argv: list[str] | None = None) -> int:
         wall_fps = round(n / counted_s, 1) if check == "fps" and counted_s else None
         all_rows.extend(rows)
         report.append(f"{check.upper()}:")
-        report.extend(f"  {line}" for line in verdicts(check, rows, wall_fps))
-        if check == "fps":
-            report.append(
-                f"  kare basi islem suresi ortanca {rows[0]['extract_ms_median']} ms, "
-                f"p95 {rows[0]['extract_ms_p95']} ms"
-            )
+        report.extend(f"  {line}" for line in verdicts(check, rows, wall_fps, camera_fps))
 
     if not args.dry_run:
         import cv2
