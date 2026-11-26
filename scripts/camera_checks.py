@@ -342,6 +342,9 @@ def camera_info(source, seconds: float = 3.0) -> dict:
         "measured_fps": round(s.measured_fps, 1) if s.measured_fps else None,
         "frames_read": s.frames_read,
         "dropped_by_source": s.dropped_by_source,
+        "requested": CAMERA_SETTINGS.get("requested"),
+        "fourcc": CAMERA_SETTINGS.get("fourcc"),
+        "reported_fps": CAMERA_SETTINGS.get("reported_fps"),
     }
 
 
@@ -354,10 +357,52 @@ class _ThrottledFake(FakeVideoSource):
             yield frame
 
 
+def _fourcc_text(value: float) -> str | None:
+    code = int(value)
+    if code <= 0:
+        return None
+    text = "".join(chr((code >> 8 * i) & 0xFF) for i in range(4))
+    return text if text.isprintable() else str(code)
+
+
+CAMERA_SETTINGS: dict = {}  # kameranın istek sonrası bildirdiği gerçek ayarlar
+
+
+def _camera_factory(args):
+    """Kamerayı açar; formatı, çözünürlüğü ve FPS'i bu sırayla ister (DirectShow sırası).
+
+    Sıkıştırılmamış YUY2 ile USB 2.0 kameralar 720p'de çoğunlukla 30 FPS veremez; MJPG
+    istenir. Kameranın gerçekten kabul ettiği değerler CAMERA_SETTINGS'e yazılır.
+    """
+    import cv2
+
+    def factory(index: int):
+        backend = cv2.CAP_DSHOW if sys.platform == "win32" else cv2.CAP_ANY
+        cap = cv2.VideoCapture(index, backend)
+        if not cap.isOpened():
+            return cap
+        if args.fourcc.upper() != "NONE":
+            cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*args.fourcc.upper()[:4]))
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, args.width)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, args.height)
+        if args.fps:
+            cap.set(cv2.CAP_PROP_FPS, args.fps)
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        CAMERA_SETTINGS.update(
+            requested=f"{args.fourcc.upper()} {args.width}x{args.height} {args.fps} FPS",
+            fourcc=_fourcc_text(cap.get(cv2.CAP_PROP_FOURCC)),
+            reported_fps=round(fps, 1) if fps and fps > 0 else None,
+        )
+        return cap
+
+    return factory
+
+
 def make_source(args):
     if args.dry_run:
         return _ThrottledFake.regular("CAMERA_CHECK", n_frames=900, fps=30)
-    return LiveVideoSource(args.camera, "CAMERA_CHECK", width=args.width, height=args.height)
+    # Çözünürlük fabrikada istenir; LiveVideoSource'un tekrar istemesi FPS'i sıfırlayabilir.
+    return LiveVideoSource(args.camera, "CAMERA_CHECK", capture_factory=_camera_factory(args))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -370,6 +415,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument("--width", type=int, default=1280)
     ap.add_argument("--height", type=int, default=720)
+    ap.add_argument(
+        "--fourcc", default="MJPG", help="Kameradan istenen format (MJPG, YUY2; NONE: isteme)"
+    )
+    ap.add_argument("--fps", type=float, default=30.0, help="Kameradan istenen FPS (0: isteme)")
     ap.add_argument("--models", type=Path, default=Path("models"))
     ap.add_argument("--only", nargs="+", choices=["info", *CHECKS], default=None)
     ap.add_argument("--out", type=Path, default=Path("local_data/camera_checks"))
@@ -387,9 +436,12 @@ def main(argv: list[str] | None = None) -> int:
             info = camera_info(source)
         all_rows.append(info)
         report.append(
-            f"KAMERA: {info['width_px']}x{info['height_px']}, nominal {info['nominal_fps']} FPS, "
+            f"KAMERA: istenen {info['requested']} | kameranin verdigi: format {info['fourcc']}, "
+            f"{info['width_px']}x{info['height_px']}, bildirilen {info['reported_fps']} FPS, "
             f"olculen {info['measured_fps']} FPS, dusen kare {info['dropped_by_source']}"
         )
+        if info["fourcc"] and info["fourcc"].upper() != "MJPG" and not args.dry_run:
+            report.append("  !! MJPG kabul edilmedi: 720p'de 30 FPS alinamayabilir")
 
     for check in [c for c in selected if c in CHECKS]:
         title, phases = CHECKS[check]
