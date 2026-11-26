@@ -213,3 +213,16 @@ def test_noiseless_labels_equal_scenario():
         (b.start_s * 1000, b.end_s * 1000, b.label) for b in s.scenario.blocks
     ]
     assert s.face_dropouts == ()
+
+
+def test_phone_box_is_top_left_like_phone_module(scen):
+    """Kutu features/phone.py gibi sol üst köşe + genişlik/yükseklik biçimindedir."""
+    boxes = [r for r in scen.features if r.phone_box_x is not None]
+    assert boxes
+    for r in boxes:
+        assert r.phone_box_x + r.phone_box_w <= 1.0 + 1e-9
+        inside = (
+            r.phone_box_x <= r.right_wrist_x <= r.phone_box_x + r.phone_box_w
+            and r.phone_box_y <= r.right_wrist_y <= r.phone_box_y + r.phone_box_h
+        )
+        assert r.hand_phone_overlap == inside

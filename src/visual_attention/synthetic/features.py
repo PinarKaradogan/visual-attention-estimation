@@ -21,6 +21,8 @@ from visual_attention.core.status import FaceStatus, HandStatus, PhoneStatus
 from visual_attention.synthetic.behavior import BehaviorSegment, label_at
 
 SYNTHETIC_FEATURE_VERSION = "syn-0.1.0"
+PHONE_BOX_W, PHONE_BOX_H = 0.08, 0.12
+"""Uydurma telefon kutusu boyutu (normalize)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -238,13 +240,15 @@ def _make_record(
         phone_status = PhoneStatus.VISIBLE
         if false_positive:
             score = rng.uniform(0.3, 0.5)
-            box = (_clip01(rng.uniform(0.1, 0.9)), _clip01(rng.uniform(0.6, 0.95)))
+            cx, cy = rng.uniform(0.1, 0.9), rng.uniform(0.6, 0.95)
         else:
             score = _clip01(rng.gauss(*cp.phone_score))
-            box = (_clip01(rx + rng.gauss(0, 0.01)), _clip01(ry - 0.05 + rng.gauss(0, 0.01)))
-        bw, bh = 0.08, 0.12
-        dist = math.hypot(box[0] - rx, box[1] - ry) / math.sqrt(2)
-        overlap = abs(box[0] - rx) <= bw / 2 and abs(box[1] - ry) <= bh / 2
+            cx, cy = rx + rng.gauss(0, 0.01), ry - 0.05 + rng.gauss(0, 0.01)
+        # Kutu, features/phone.py ile aynı biçimde: sol üst köşe (x, y) + genişlik/yükseklik.
+        bw, bh = PHONE_BOX_W, PHONE_BOX_H
+        box = (_clip01(cx - bw / 2), _clip01(cy - bh / 2))
+        dist = math.hypot(cx - rx, cy - ry) / math.sqrt(2)
+        overlap = box[0] <= rx <= box[0] + bw and box[1] <= ry <= box[1] + bh
     elif cp.hand_on_phone:
         phone_status = PhoneStatus.OCCLUDED  # telefon elin arkasında kaldı
         score = box = dist = overlap = None
@@ -281,6 +285,6 @@ def _make_record(
         phone_score=score,
         phone_box_x=box[0] if box else None,
         phone_box_y=box[1] if box else None,
-        phone_box_w=0.08 if box else None,
-        phone_box_h=0.12 if box else None,
+        phone_box_w=PHONE_BOX_W if box else None,
+        phone_box_h=PHONE_BOX_H if box else None,
     )
