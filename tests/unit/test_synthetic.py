@@ -8,7 +8,8 @@ import pytest
 
 from visual_attention.core import Label
 from visual_attention.core.reference import HUMAN_INTERVAL_LABELS
-from visual_attention.core.status import FaceStatus, PhoneStatus
+from visual_attention.core.status import FaceStatus, HandStatus, PhoneStatus
+from visual_attention.features.phone import DEFAULT_VISIBLE_THRESHOLD
 from visual_attention.labeling import SessionType
 from visual_attention.synthetic import (
     SOURCE_MODE,
@@ -152,12 +153,28 @@ def test_face_dropout_frames_have_no_face_values(scen):
         assert not r.validity_flags.head_pose_valid
 
 
-def test_missing_values_are_none_not_zero(scen):
+def test_missing_values_follow_real_modules(scen):
+    """Biçim gerçek face.py / phone.py / hand.py çıktılarıyla aynı."""
     for r in scen.features:
-        if r.phone_status is not PhoneStatus.VISIBLE:
-            assert r.phone_score is None and r.phone_box_x is None
+        assert r.face_status in (FaceStatus.VALID, FaceStatus.NOT_DETECTED)
+        assert r.phone_status in (PhoneStatus.VISIBLE, PhoneStatus.NOT_VISIBLE)
+        assert r.phone_score is not None
+        assert (r.phone_status is PhoneStatus.VISIBLE) == (
+            r.phone_score >= DEFAULT_VISIBLE_THRESHOLD
+        )
+        if r.phone_score == 0.0:
+            assert r.phone_box_x is None
         if r.face_status is not FaceStatus.VALID:
             assert r.eye_aspect_ratio_left is None
+        if r.hand_status is HandStatus.NOT_DETECTED:
+            assert r.hand_count == 0 and r.right_wrist_x is None
+            assert r.hand_phone_distance_norm is None and r.hand_phone_overlap is None
+
+
+def test_weak_phone_candidates_keep_their_box(scen):
+    weak = [r for r in scen.features if r.phone_status is PhoneStatus.NOT_VISIBLE and r.phone_score]
+    assert weak
+    assert all(r.phone_box_x is not None for r in weak)
 
 
 def test_class_dependent_values(scen):
@@ -217,12 +234,14 @@ def test_noiseless_labels_equal_scenario():
 
 def test_phone_box_is_top_left_like_phone_module(scen):
     """Kutu features/phone.py gibi sol üst köşe + genişlik/yükseklik biçimindedir."""
-    boxes = [r for r in scen.features if r.phone_box_x is not None]
+    boxes = [r for r in scen.features if r.phone_box_x is not None and r.hand_count]
     assert boxes
     for r in boxes:
         assert r.phone_box_x + r.phone_box_w <= 1.0 + 1e-9
-        inside = (
-            r.phone_box_x <= r.right_wrist_x <= r.phone_box_x + r.phone_box_w
-            and r.phone_box_y <= r.right_wrist_y <= r.phone_box_y + r.phone_box_h
+        inside = any(
+            r.phone_box_x <= x <= r.phone_box_x + r.phone_box_w
+            and r.phone_box_y <= y <= r.phone_box_y + r.phone_box_h
+            for x, y in ((r.right_wrist_x, r.right_wrist_y), (r.left_wrist_x, r.left_wrist_y))
         )
         assert r.hand_phone_overlap == inside
+        assert r.hand_phone_distance_norm is not None
