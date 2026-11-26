@@ -148,7 +148,7 @@ Zorunlu izleme alanları: `experiment_id`, `created_at`, `git_commit`, `schema_v
 ```text
 # GitHub'a girebilen: şema, kod, test ve gerçek kişi içermeyen sentetik örnekler
 docs/data-schema.md
-tests/fixtures/synthetic_sessions.json
+src/visual_attention/synthetic/   # sentetik test verisi üreticisi (#17); çıktıyı diske yazmaz
 
 # Yalnız gerekli kurum kararı sonrası, erişim kontrollü yerel depolama
 local_data/raw_video/          # ham kayıt; GitHub'a ASLA gönderme
@@ -173,6 +173,13 @@ local_data/experiments/        # sonuçlar kişisel veriden arındırılmadan pa
 9. **Güvenlik:** sentetik örnekler gerçek kişisel veri içermez; gerçek verinin Git'e girmemesi kontrol edilir.
 
 Faz 2'de en az bir küçük sentetik fixture ve test eklenmesi planlanır; **bu belge tek başına testlerin çalıştığı anlamına gelmez**.
+
+**Sentetik veri (#17, P3-03):** `visual_attention.synthetic` modülü davranış çizelgesi, ELAN biçiminde insan etiketi ve `FeatureRecord` akışını bellekte üretir; yukarıdaki 1–9 numaralı kurallar `tests/unit/test_synthetic*.py` içinde uçtan uca sınanır. Kurallar:
+
+- Sentetik katılımcı kodları `P9` ile başlar (P901, P902, …); gerçek gönüllü kodları reddedilir. `source_mode = SYNTHETIC`, `feature_version = syn-…`, `label_version = syn-label-…`.
+- Değerler uydurmadır ve dosyada öyle belirtilir. Sentetik veriden **hiçbir sonuç, eşik veya model türetilmez ve raporlanmaz**; M0 eşikleri ve M1 eğitimi yalnız gerçek eğitim kişileriyle belirlenir.
+- Üretici diske yazmaz; ELAN dosyası gerekiyorsa test geçici klasörüne yazılır. Sentetik çıktı Git'e ve `local_data/`'ya konmaz.
+- Kare hızı ayarlanabilir; testler 7, 15 ve 30 FPS ile çalışır. Gerçek kayıt kare hızı teknik pilotta belirlenir (v5 §2.2).
 
 ## 6. Açık kararlar ve sorumluları
 
