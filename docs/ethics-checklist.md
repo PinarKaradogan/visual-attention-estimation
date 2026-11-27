@@ -1,9 +1,9 @@
 Faz 1.3 — Etik ve Hukuki Hazırlık Kontrol Listesi
 Proje: Masa Başında Kâğıt Tabanlı Çalışmada Görsel Dikkat Durumunun ve Odak Süresinin Bilgisayarlı Görü ile Kestirimi
 Ekip: Bahar ve Pınar
-Tarih: 9 Kasım 2026 (güncelleme: 25 Kasım 2026, #30 — öneri v5 uyumu)
+Tarih: 9 Kasım 2026 (güncelleme: 25 Kasım 2026, #30 — öneri v5 uyumu; 27 Kasım 2026, #31 — kayıt protokolü kararları)
 Durum: Etik kurul başvurusu yapıldı, karar bekleniyor (öneri v5 §2.8). Bu belge etik kurul onayı, hukuk görüşü veya izin belgesi değildir.
-İlgili iş paketi: Faz 1 / İP1 (8 haftalık iç yol haritası)
+İlgili iş paketi: v5 İP1; ders planı Faz 1–2 ve Faz 6 (bkz. project-charter.md §5)
 1. Araştırma bağlamı ve sınırlar
 - 8–10 yetişkin gönüllü; kişi başına 20 dakika senaryolu ve 10 dakika serbest oturum.
 - Tek kamera; baş pozu, göz açıklık oranı (yardımcı gösterge), el/bilek göstergeleri (yazma hareketi, telefona uzanma, telefonu tutma) ve görünür telefon ipuçları (v5 §2.4).
@@ -101,6 +101,9 @@ Tarih	Konu	Karar / belge referansı	Kararı veren	Durum
 2026-11-25	İki etiketleyici (Bahar'ın video erişimi)	Değişiklik bildirimi gerekip gerekmediği danışmanla görüşülüyor	Danışman ve etik kurul	BEKLİYOR
 2026-11-25	Test telefonu	Kişisel içeriksiz test telefonu (v5 §2.2); Pınar'ın telefonu ancak bu koşulla	Proje ekibi	UYGULANACAK
 2026-11-25	Kayıt penceresi	2–5 Aralık 2026, yalnız izin belgesi alınmışsa	Proje ekibi	UYGULANACAK
+2026-11-27	Ses kaydı	Ses kaynağında kapatılır: Windows mikrofon erişimi kapalı + OBS'de ses aygıtı yok; her kayıttan sonra dosyada ses kanalı olmadığı kontrol edilir (recording-protocol.md §8.1)	Proje ekibi	UYGULANACAK
+2026-11-27	Üçüncü kişiler ve operatör	Operatör ve Bahar kadraj dışında; arka planda kişi/ekran yok; OBS önizlemesiyle doğrulanır (recording-protocol.md §3.2, §5)	Proje ekibi	UYGULANACAK
+2026-11-27	Kayıt protokolü	docs/recording-protocol.md v1.0 (#31)	Proje ekibi	UYGULANACAK
 
 
 10. Faz 1.3 çıkış kapısı
