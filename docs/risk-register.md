@@ -1,7 +1,7 @@
 Faz 1.4 — Teknik Fizibilite ve Risk Kaydı
 Proje: Masa Başında Kâğıt Tabanlı Çalışmada Görsel Dikkat Durumunun ve Odak Süresinin Bilgisayarlı Görü ile Kestirimi
 Ekip: Bahar ve Pınar
-Hazırlanma tarihi: 9 Kasım 2026 (güncelleme: 25 Kasım 2026, #30 — öneri v5 uyumu ve iki geliştiricili plan)
+Hazırlanma tarihi: 9 Kasım 2026 (güncelleme: 25 Kasım 2026, #30 — öneri v5 uyumu ve iki geliştiricili plan; 27 Kasım 2026, #31 — R22 ve kamera ölçümleri)
 İlgili faz / iş paketi: Faz 1 — Hazırlık, kapsam ve analiz / İP1
 Durum: Başlangıç risk envanteri hazır; ölçüm sonuçları, donanım bilgileri ve ekip teyidi bekleniyor.
 Kaynak: TÜBİTAK 2209-A önerisi v5 (§3.2 Risk Yönetimi, kapsamın asıl kaynağı); docs/project-charter.md v2; docs/ethics-checklist.md; docs/labeling-protocol.md; Gorsel_Dikkat_Projesi_8_Haftalik_Yol_Haritasi(1).docx.
@@ -44,6 +44,7 @@ R18	Elde tutulan telefonun nesne tespitinde kaçırılması; TELEFON sınıfınd
 R19	Test–tekrar test etiketlemesinin teslim tarihinden sonraya kalması	5	3	15	Pınar	İlk etiketleme 2–5 Aralık'ta; ≥ 4 hafta kuralı	Kural kısaltılmaz; tekrar setindeki videolar ilk etiketlenir; tekrar etiketleme Ocak başında yapılıp sonuçlar eklenir	labeling-protocol.md §7; etiket sürüm kayıtları (r1/r2/final)	Açık
 R20	Bahar'ın video erişimi için etik değişiklik onayının gelmemesi	3	4	12	Pınar	Danışman/kurul yanıtı olumsuz ya da gecikmeli	Onay gelene kadar Bahar video görmez; etiketlemenin tamamı Pınar'da (≈ 25 sa ilk etiketleme); Bahar'ın iş yükü kod tarafına kaydırılır	ethics-checklist.md §5.1 ve §9	Açık
 R21	10 günlük takvimde iş yükü yoğunluğu; kapsam baskısı	4	4	16	Pınar	Ready'de bekleyen ya da Blocked'da kalan kartlar	Kapsam daraltılmaz; bağımlılık zinciri, günlük durum notu, kritik yol (#26 → #32, #35 → #29) önceliği; v5 B planı (önerinin kendi önlemi): analiz önceliği senaryolu oturumlar, serbest oturum keşifsel düzeyde raporlanır, gerekirse prototip arayüzü komut satırı oturum özetine sadeleştirilir, H1–H5 ölçütleri değişmez	Pano ve PR akışı	Açık
+R22	Kamera v5 asgari özelliklerini karşılamıyor (Logitech C310: 720p, sabit odak, tripod bağlantısı yok); 720p'de yalnız ≈ 6 FPS ve baş eğilince/yana dönünce yüz kaybı	5	3	15	Pınar	Gün başı kontrolünde yüz < %90 ya da kamera hızı < 25 FPS	Kayıt 640×480 / 30 FPS (v5 §2.2 teknik pilot kararı; v5 B planı: çözünürlüğü kontrollü düşürme); kamera tam karşıda ve çene hizasında, yeri bantla sabit; gün başı kontrolü (recording-protocol.md §4); sapma raporda açıkça belirtilir; arızada dahili kamera yedek (v5 B planı)	camera_checks 27.11 özetleri (640×480'de 29,1 FPS; 720p'de 6,2 FPS; masadaki eller %98–100); 2 Aralık teknik pilot sonucu	Açık
 
 
 Puanlar: Gerçek saha ölçümlerine değil ön değerlendirmeye dayanır. Ekip gözden geçirmesiyle değiştirilebilir; yüksek skor ≠ riskin gerçekleştiği anlamına gelmez.
@@ -59,13 +60,13 @@ F2 — Bilgisayar ve yerel performans (Bahar + Pınar)
 Her bilgisayar için doldur:
 Alan	Bahar bilgisayarı	Pınar bilgisayarı
 İşletim sistemi	Windows 11 Pro for Workstations (build 26200)	Ölçülecek
-Python sürümü	3.13.16 (conda; proje ortamı henüz kurulmadı)	Proje ortamı: Python 3.11.9 (.venv); doğrulanacak
+Python sürümü	Proje ortamı Python 3.11.9 (.venv), PR #11'de doğrulandı	Proje ortamı: Python 3.11.9 (.venv); doğrulanacak
 CPU / RAM	AMD Ryzen 7 7840HS (8 çekirdek / 16 izlek) / 16 GB	Intel Core i7-12650H (12. nesil, 2,30 GHz) / 16 GB, 3200 MT/sn (v5 §3.3)
 GPU (varsa)	NVIDIA RTX 4050 Laptop 6 GB + AMD Radeon 780M (dahili)	NVIDIA RTX 4050 Laptop 6 GB (v5 §3.3; FPS ölçümünde kullanılmaz)
-Kamera aygıtı / çözünürlük	HP True Vision FHD (dahili, ekran üstü); 640×480, 1280×720, 1920×1080; ham yakalama ~30 FPS (720p/1080p), 13,3 FPS (640×480)	Ölçülecek
-Ortalama FPS	Ölçülecek (işlem hattı henüz yok)	Ölçülecek
+Kamera aygıtı / çözünürlük	HP True Vision FHD (dahili, ekran üstü); 640×480, 1280×720, 1920×1080; ham yakalama ~30 FPS (720p/1080p), 13,3 FPS (640×480)	Logitech C310 (harici USB); kamera MJPG'yi kabul etmiyor (YUY2): 1280×720'de 6,2 FPS, 640×480'de 29,1 FPS (27.11, görüntü kaydedilmedi)
+Ortalama FPS	Ölçülecek (işlem hattı henüz yok)	İşlem kapasitesi ≈ 12,1 FPS (720p girdi, kare başı ortanca 82,6 ms, p95 104 ms; GPU kullanılmadan; 27.11 kamera kontrolü). Prototip H5 ölçümü ayrıca yapılacak
 Gecikme (ms)	Ölçülecek (işlem hattı henüz yok)	Ölçülecek
-Kamera açma/smoke test	Geçti (OpenCV ile açıldı, kare okundu)	Beklemede
+Kamera açma/smoke test	Geçti (OpenCV ile açıldı, kare okundu)	Geçti (26–27.11 kamera kontrolleri)
 
 
 Ölçüm standardı: Aynı test videosu veya kişisel veri içermeyen sentetik giriş ve aynı işlem hattıyla karşılaştırma. FPS = işlenen kare / geçen süre; gecikme, girişten çıktı üretimine kadar ölçülür. Isınma dönemi ve test süresi raporda belirtilir. 10 FPS bir hedeftir, mevcut başarı değildir.
@@ -115,6 +116,7 @@ Tarih	Karar / gözlem	Kaynak / kanıt	Sorumlu	Sonraki işlem
 2026-11-09	Risk envanteri ilk sürümü oluşturuldu; teknik ölçüm yapılmadı	Bu belge	Pınar + Bahar inceleyecek	Donanım envanterini ve kamera koşullarını doldur
 2026-11-09	Bahar bilgisayarı: dahili kamerayla ham yakalama ölçüldü; 720p/1080p ~30 FPS, 640×480 yalnız 13,3 FPS (3 sn ölçüm, görüntü kaydedilmedi). Düşük çözünürlükteki yavaşlamanın otomatik pozlama/ışıktan kaynaklandığı tahmin ediliyor, doğrulanmadı.	OpenCV 4 + DirectShow, kişisel veri saklanmadı	Bahar	R02/R07 için ışık koşullu tekrar ölçümü; dahili kameranın kâğıt ve elleri görüp görmediği R01 kadraj testinde incelenecek (gerekirse harici USB kamera)
 2026-11-25	Risk kaydı öneri v5'e ve 10 günlük iki geliştiricili plana göre güncellendi; R16–R21 eklendi, R07/R09/R12 güncellendi	#30	Pınar	Bahar incelemesi
+2026-11-27	Pınar bilgisayarı ve C310 ile kamera kontrolleri (görüntü kaydedilmedi): 640×480'de 29,1 FPS, 720p'de 6,2 FPS (MJPG kabul edilmedi); işlem kapasitesi ≈ 12,1 FPS; masadaki eller %98–100; telefon yokken yanlış algılama %0, elde %49–76; baş eğilince ve yana dönünce yüz kaybı kamera konumuna bağlı (alçakta yazarken %0, sol göz üstünde okurken %12,5)	camera_checks özetleri; #13	Pınar	R22 eklendi; kesin kamera yeri 2 Aralık teknik pilotunda (recording-protocol.md §3–4)
 
 
 Test kayıt şablonu (her test için kopyala)
